@@ -1,0 +1,47 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+# lib/ — NOT ignored, contains module source code
+lib64/
+
+# Runtime data
+data/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment
+.env
+.venv
+env/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Layered context (DIP-0002)
+# Composed files are generated from layers
+CLAUDE.md
+*.local.yaml
+*.local.md
+*.space.md
+*.org.md
+
+# Credentials
+credentials/
+*.pickle

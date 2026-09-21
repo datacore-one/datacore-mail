@@ -1,0 +1,154 @@
+# JSON Schema for mail.yaml configuration
+# Used for validation and documentation
+
+$schema: "http://json-schema.org/draft-07/schema#"
+title: Mail Module Configuration
+description: Configuration for email accounts in a Datacore space
+
+type: object
+properties:
+  accounts:
+    type: array
+    description: List of email accounts to sync
+    items:
+      type: object
+      required:
+        - name
+        - address
+        - provider
+        - processor
+      properties:
+        name:
+          type: string
+          description: Account identifier (e.g., "personal", "accounting")
+          examples:
+            - personal
+            - accounting
+            - info
+            - support
+
+        address:
+          type: string
+          format: email
+          description: Email address for this account
+
+        provider:
+          type: string
+          enum:
+            - gmail
+            - imap
+          default: gmail
+          description: Email provider/protocol
+
+        processor:
+          type: string
+          enum:
+            - classifier
+            - accounting
+            - support
+            - archive
+          default: classifier
+          description: |
+            Processing strategy:
+            - classifier: AI classification into ACTIONABLE/INFORMATIONAL/IGNORE
+            - accounting: Invoice extraction and financial processing
+            - support: Create GitHub issues from support emails
+            - archive: Just archive, no org entries
+
+        destination:
+          type: string
+          default: org/inbox.org
+          description: Relative path to destination org file
+          examples:
+            - org/inbox.org
+            - org/accounting.org
+            - org/support.org
+
+        labels:
+          type: array
+          items:
+            type: string
+          default:
+            - INBOX
+          description: Gmail labels to sync
+
+        auto_archive:
+          type: boolean
+          default: false
+          description: Automatically archive processed emails
+
+        settings:
+          type: object
+          description: Processor-specific settings
+          properties:
+            # Classifier settings
+            auto_ignore:
+              type: object
+              properties:
+                senders:
+                  type: array
+                  items:
+                    type: string
+                  description: Sender patterns to auto-ignore
+                domains:
+                  type: array
+                  items:
+                    type: string
+                  description: Sender domains to auto-ignore
+                keywords:
+                  type: array
+                  items:
+                    type: string
+                  description: Body keywords to auto-ignore
+
+            priority_senders:
+              type: array
+              items:
+                type: string
+              description: Sender patterns for high priority
+
+            # Accounting settings
+            extract_invoices:
+              type: boolean
+              default: true
+              description: Extract invoice data from emails
+
+            update_ledger:
+              type: boolean
+              default: false
+              description: Update accounting ledger
+
+            notify_on_high_value:
+              type: number
+              description: Amount threshold for high-value invoice alerts
+
+            # Support settings
+            github_repo:
+              type: string
+              description: GitHub repo for issue creation (owner/repo)
+
+            auto_label:
+              type: boolean
+              default: true
+              description: Auto-label GitHub issues
+
+examples:
+  - accounts:
+      - name: personal
+        address: victor@example.com
+        provider: gmail
+        processor: classifier
+        destination: org/inbox.org
+        settings:
+          priority_senders:
+            - "@important.com"
+
+  - accounts:
+      - name: accounting
+        address: billing1@vendor.example.com
+        provider: gmail
+        processor: accounting
+        destination: org/accounting.org
+        settings:
+          extract_invoices: true
+          notify_on_high_value: 10000

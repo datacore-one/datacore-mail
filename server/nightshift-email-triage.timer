@@ -1,0 +1,12 @@
+[Unit]
+Description=Email Triage Timer — 05:30 UTC daily (pre-briefing pipeline)
+
+[Timer]
+# Pre-briefing pipeline: 05:30 email triage | 06:00 today briefing
+# 30-min lead time before /today catches late-overnight arrivals (LEGO, OKX, etc.)
+OnCalendar=*-*-* 05:30:00 UTC
+Persistent=true
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

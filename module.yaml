@@ -1,0 +1,102 @@
+manifest_version: 2
+name: mail
+version: 1.2.0
+description: |
+  Email integration — Gmail adapter, AI classification, routing, task creation,
+  and automated daily triage with nightshift fallback.
+
+author: datacore-one
+repository: https://github.com/datacore-one/datacore-mail
+license: MIT
+
+dependencies:
+  - core@>=1.0.0
+
+optional:
+  - nightshift@>=0.2.0
+
+provides:
+  commands:
+    - mails           # Interactive email processing workflow
+    - triage-email    # Automated daily email triage
+  agents:
+    - mail-classifier # AI-powered email classification
+    - mail-responder  # Nightshift agent for :AI:mail: tasks
+  skills:
+    - triage-email
+  adapters:
+    - gmail           # Gmail API adapter with OAuth2
+
+settings:
+  # Per-space mail configuration in {space}/mail.yaml
+  # Per-space rules in {space}/mail-rules.yaml
+  auto_archive_cc: true
+  auto_archive_spam: true
+  daily_digest_enabled: true
+  github_auto_process: true
+
+  # Triage settings
+  triage_account:
+    description: "Gmail account for daily triage"
+    default: "grace@example.com"
+
+  triage_forward_to:
+    description: "Forward invoices/receipts to this accounting email"
+    default: "billing2@vendor.example.com"
+
+  triage_scan_days:
+    description: "How far back to scan for emails"
+    default: 3
+
+  triage_auto_task_create:
+    description: "Automatically create GTD tasks from actionable items"
+    default: true
+
+use_cases:
+  - "Process email inbox and create GTD tasks"
+  - "Classify emails by action needed and track"
+  - "Route GitHub notifications to update org tasks"
+  - "Extract invoices from accounting emails"
+  - "Aggregate newsletter articles for research"
+  - "Send emails directly from Datacore"
+  - "Daily automated email triage with /today integration"
+
+hooks:
+  today:
+    - section: actionable_mail
+      prompt: commands/today-hook.md
+      stage: gather
+      refresh: true
+
+# DIP-0022 context
+context:
+  priority: on_match
+
+# Engrams
+engrams:
+  namespace: mail
+  scopes: [mail, triage]
+
+recall:
+  # DIP-0029 — module-level engram scope; composes with command-level recall:.
+  scopes:
+    - module:mail
+  tags:
+    - mail
+
+# DIP-0047 — sending mail is irreversible and now attested.
+# Not visible to egress_scan: the Gmail client sends via .execute(), which the
+# scanner cannot distinguish from a read. Declared from a read of the code.
+egress:
+  - fn: adapters/gmail.py:send_email
+    kind: email.sent
+  - fn: adapters/gmail.py:reply
+    kind: email.reply
+
+exempt:
+  - fn: "lib/email_scanner.py:_ollama_classify"
+    reason: local Ollama inference — no external side effect
+  - fn: "lib/model_compare.py:classify"
+    reason: local Ollama inference — no external side effect
+  - fn: "lib/ollama_classify.py:classify_unknown"
+    reason: local Ollama inference — no external side effect

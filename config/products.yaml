@@ -1,0 +1,270 @@
+# Product Registry - Tools used per space
+# ========================================
+#
+# Used by check_product_update action to determine newsletter relevance.
+# When a product newsletter arrives, the processor checks:
+# 1. Which space(s) use this product
+# 2. Whether the email content matches relevance keywords
+# 3. If relevant, creates an inbox task for that space
+#
+# Pattern: Similar to rules.base.yaml layered approach
+
+version: 1
+description: Product registry for newsletter relevance checking
+
+products:
+  # ==========================================================================
+  # Analytics & Monitoring
+  # ==========================================================================
+
+  posthog:
+    name: PostHog
+    category: analytics
+    website: https://posthog.com
+    used_by:
+      - space: 1-teamspace
+        purpose: "Product analytics, web tracking for Project Alpha"
+    newsletter_senders:
+      - "posthog"
+      - "joe at posthog"
+    relevance_keywords:
+      - analytics
+      - web vitals
+      - UTM
+      - conversion
+      - session recording
+      - feature flags
+      - A/B test
+      - funnel
+
+  # ==========================================================================
+  # Infrastructure & Hosting
+  # ==========================================================================
+
+  digitalocean:
+    name: DigitalOcean
+    category: infrastructure
+    website: https://digitalocean.com
+    used_by:
+      - space: 1-teamspace
+        purpose: "Hosting infrastructure, droplets, app platform"
+    newsletter_senders:
+      - "digitalocean"
+    relevance_keywords:
+      - n8n
+      - app platform
+      - droplet
+      - kubernetes
+      - managed database
+      - spaces
+      - load balancer
+      - pricing
+
+  # ==========================================================================
+  # Workflow Automation
+  # ==========================================================================
+
+  n8n:
+    name: n8n
+    category: automation
+    website: https://n8n.io
+    used_by:
+      - space: 1-teamspace
+        purpose: "Workflow automation for internal processes"
+    newsletter_senders:
+      - "n8n"
+      - "n8n.io"
+    relevance_keywords:
+      - workflow
+      - automation
+      - integration
+      - webhook
+      - trigger
+      - node
+      - langchain
+      - AI workflow
+
+  # ==========================================================================
+  # Development Tools
+  # ==========================================================================
+
+  github:
+    name: GitHub
+    category: development
+    website: https://github.com
+    used_by:
+      - space: 2-projectspace
+        purpose: "Code hosting, Copilot, MCP servers"
+      - space: 1-teamspace
+        purpose: "Code hosting, team collaboration"
+    newsletter_senders:
+      - "github"
+      - "noreply2@service.example.com"
+    relevance_keywords:
+      - copilot
+      - MCP
+      - model context protocol
+      - actions
+      - codespaces
+      - code review
+      - security
+      - dependabot
+      - enterprise
+      - budget
+
+  # ==========================================================================
+  # AI & Productivity Tools
+  # ==========================================================================
+
+  napkin_ai:
+    name: Napkin AI
+    category: productivity
+    website: https://napkin.ai
+    used_by:
+      - space: 0-personal
+        purpose: "Visual generation for presentations and documents"
+    newsletter_senders:
+      - "napkin"
+      - "napkin ai"
+    relevance_keywords:
+      - visual
+      - diagram
+      - presentation
+      - infographic
+      - chart
+      - generation
+      - AI visual
+
+  granola:
+    name: Granola
+    category: productivity
+    website: https://granola.ai
+    used_by:
+      - space: 0-personal
+        purpose: "AI meeting notes and transcription"
+    newsletter_senders:
+      - "granola"
+    relevance_keywords:
+      - meeting
+      - notes
+      - transcription
+      - summary
+      - action items
+      - calendar
+
+  claude:
+    name: Claude / Anthropic
+    category: ai
+    website: https://claude.ai
+    used_by:
+      - space: 2-projectspace
+        purpose: "AI assistant, Claude Code CLI"
+      - space: 0-personal
+        purpose: "Personal AI assistant"
+    newsletter_senders:
+      - "anthropic"
+      - "claude"
+    relevance_keywords:
+      - claude
+      - claude code
+      - model
+      - API
+      - tool use
+      - MCP
+      - context window
+      - opus
+      - sonnet
+      - haiku
+
+  # ==========================================================================
+  # Database & Backend
+  # ==========================================================================
+
+  supabase:
+    name: Supabase
+    category: database
+    website: https://supabase.com
+    used_by:
+      - space: 1-teamspace
+        purpose: "Database and auth for Project Alpha"
+    newsletter_senders:
+      - "supabase"
+    relevance_keywords:
+      - database
+      - postgres
+      - auth
+      - edge functions
+      - realtime
+      - storage
+      - vector
+
+  # ==========================================================================
+  # Design & Visual Tools
+  # ==========================================================================
+
+  figma:
+    name: Figma
+    category: design
+    website: https://figma.com
+    used_by:
+      - space: 1-teamspace
+        purpose: "UI/UX design for Project Alpha"
+    newsletter_senders:
+      - "figma"
+    relevance_keywords:
+      - design
+      - prototype
+      - component
+      - dev mode
+      - handoff
+      - plugin
+      - AI
+
+  gamma:
+    name: Gamma
+    category: productivity
+    website: https://gamma.app
+    used_by:
+      - space: 0-personal
+        purpose: "Presentation generation"
+      - space: 1-teamspace
+        purpose: "Investor decks and presentations"
+    newsletter_senders:
+      - "gamma"
+    relevance_keywords:
+      - presentation
+      - deck
+      - slides
+      - template
+      - AI generation
+      - export
+
+# ==========================================================================
+# Categories (for grouping in reports)
+# ==========================================================================
+
+categories:
+  analytics:
+    name: Analytics & Monitoring
+    icon: "📊"
+  infrastructure:
+    name: Infrastructure & Hosting
+    icon: "🏗️"
+  automation:
+    name: Workflow Automation
+    icon: "⚙️"
+  development:
+    name: Development Tools
+    icon: "💻"
+  productivity:
+    name: AI & Productivity
+    icon: "🚀"
+  ai:
+    name: AI Services
+    icon: "🤖"
+  database:
+    name: Database & Backend
+    icon: "🗄️"
+  design:
+    name: Design & Visual
+    icon: "🎨"

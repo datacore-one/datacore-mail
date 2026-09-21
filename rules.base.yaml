@@ -1,0 +1,802 @@
+# Mail Classification Rules - Base Layer
+# ========================================
+#
+# This file contains default classification rules that apply across all spaces.
+# Override with space-specific rules in {space}/mail-rules.yaml
+# Personal overrides in .datacore/modules/mail/rules.local.yaml (gitignored)
+#
+# Rules are merged in order: base → space → local (later wins)
+#
+# Pattern: DIP-0002 Layered Context Pattern applied to email classification
+
+version: 1
+description: Default email classification rules
+
+# =============================================================================
+# SENDER RULES (most specific - match by email address or name)
+# =============================================================================
+
+senders:
+  # Senders that always trigger ACTIONABLE
+  actionable: []
+  # Space-specific: Add business contacts in {space}/mail-rules.yaml
+  # Example:
+  #   - pattern: "mayur"
+  #     priority: HIGH
+  #     tags: [business, fundraising]
+  #     reason: "Key investor contact"
+
+  # Senders that provide research/strategy content (INFORMATIONAL + RESEARCH track)
+  # action: prepare_for_research = extract URL, create inbox task, archive email
+  research:
+    # Business/Strategy research (high quality, read for insights)
+    - pattern: "avc"
+      topics: [investing, strategy, web3, startups]
+      action: prepare_for_research
+      url_pattern: "paragraph.com/@avc/"
+      reason: "Fred Wilson's AVC blog - valuable strategy insights"
+    - pattern: "fred@avc"
+      topics: [investing, strategy, web3, startups]
+      action: prepare_for_research
+    - pattern: "fred wilson"
+      topics: [investing, strategy, web3, startups]
+      action: prepare_for_research
+    - pattern: "stratechery"
+      topics: [tech, strategy, business-models]
+      action: prepare_for_research
+      reason: "Ben Thompson's analysis"
+    - pattern: "hbr"
+      topics: [management, strategy, leadership]
+      action: prepare_for_research
+      url_pattern: "hbr.org/"
+      reason: "Harvard Business Review"
+    - pattern: "harvard business"
+      topics: [management, strategy, leadership]
+      action: prepare_for_research
+    # Tech/AI research (technical deep dives)
+    - pattern: "ben's bites"
+      topics: [AI, tech, products, tools]
+      action: prepare_for_research
+      url_pattern: "bensbites.com/p/"
+      reason: "Ben's Bites - AI/tech tinkerer insights"
+    - pattern: "bensbites"
+      topics: [AI, tech, products, tools]
+      action: prepare_for_research
+    # Blockchain/VC research
+    - pattern: "paul veradittakit"
+      topics: [blockchain, VC, privacy, crypto]
+      action: prepare_for_research
+      url_pattern: "veradiverdict.com/p/"
+      reason: "Paul Veradittakit - Pantera VC blockchain insights"
+    - pattern: "a16z"
+      topics: [crypto, tech, VC, research]
+      action: prepare_for_research
+      reason: "a16z crypto - leading VC research"
+    - pattern: "a16zcrypto"
+      topics: [crypto, tech, VC, research]
+      action: prepare_for_research
+    # Crypto macro analysis
+    - pattern: "cryptohayes"
+      topics: [crypto, macro, trading, bitcoin]
+      action: prepare_for_research
+      reason: "Arthur Hayes - BitMEX founder, crypto macro analysis"
+    - pattern: "arthur hayes"
+      topics: [crypto, macro, trading, bitcoin]
+      action: prepare_for_research
+    # Tech/Business strategy
+    - pattern: "notboring"
+      topics: [tech, strategy, startups, business]
+      action: prepare_for_research
+      reason: "Packy McCormick - Not Boring, high quality strategy/business"
+    - pattern: "packy"
+      topics: [tech, strategy, startups, business]
+      action: prepare_for_research
+    # Crypto/Web3 strategy
+    - pattern: "cdixon"
+      topics: [crypto, web3, strategy, VC]
+      action: prepare_for_research
+      url_pattern: "cdixon.substack.com/p/"
+      reason: "Chris Dixon (a16z) - crypto/web3 strategy"
+    # Media/Tech/Society
+    - pattern: "casey newton"
+      topics: [tech, media, society, platforms]
+      action: prepare_for_research
+      reason: "Casey Newton - Platformer, tech/society deep dives"
+    - pattern: "platformer"
+      topics: [tech, media, society, platforms]
+      action: prepare_for_research
+    # DeSci
+    - pattern: "moleculeto"
+      topics: [desci, biotech, science, crypto]
+      action: prepare_for_research
+      reason: "Molecule - DeSci protocol, relevant to Organization"
+    - pattern: "molecule.to"
+      topics: [desci, biotech, science, crypto]
+      action: prepare_for_research
+    # Tech futures
+    - pattern: "stateofthefuture"
+      topics: [tech, semiconductors, futures, geopolitics]
+      action: prepare_for_research
+      reason: "State of the Future - tech futures, semiconductors"
+    # Legal/Regulatory research
+    - pattern: "uae crypto law"
+      topics: [regulation, UAE, dubai, legal]
+      action: prepare_for_research
+      reason: "UAE Crypto Law Alerts - regulatory updates"
+    - pattern: "irina heaver"
+      topics: [regulation, UAE, dubai, legal]
+      action: prepare_for_research
+
+  # Newsletter senders (INFORMATIONAL + NEWSLETTER track)
+  # action: archive_only = read headlines, archive (no inbox entry)
+  newsletter:
+    # Daily news digests (aggregate into single daily digest task)
+    - pattern: "superhuman"
+      action: aggregate_daily_news
+      type: daily_news
+      category: ai_tech
+    - pattern: "zain"
+      action: aggregate_daily_news
+      type: daily_news
+    - pattern: "therundownai"
+      action: aggregate_daily_news
+      type: daily_news
+      category: ai_tech
+    - pattern: "the rundown"
+      action: aggregate_daily_news
+      type: daily_news
+    - pattern: "thedefiant"
+      action: aggregate_daily_news
+      type: daily_news
+      category: crypto
+    - pattern: "the defiant"
+      action: aggregate_daily_news
+      type: daily_news
+    - pattern: "coindesk"
+      action: aggregate_daily_news
+      type: daily_news
+      category: crypto
+    - pattern: "voiceofcrypto"
+      action: aggregate_daily_news
+      type: daily_news
+      category: crypto
+      reason: "Voice of Crypto - daily crypto news digest"
+    # Crypto research providers (aggregate into daily news)
+    - pattern: "10xresearch"
+      action: aggregate_daily_news
+      type: daily_news
+      category: crypto_research
+    - pattern: "bitcoin suisse"
+      action: aggregate_daily_news
+      type: daily_news
+      category: crypto_research
+    - pattern: "radarblock"
+      action: aggregate_daily_news
+      type: daily_news
+      category: crypto_research
+    - pattern: "cryptopolitan"
+      action: aggregate_daily_news
+      type: daily_news
+      category: crypto_research
+    # Product updates from tools we use → check for relevance, may create task
+    - pattern: "napkin"
+      action: check_product_update
+      product: napkin_ai
+    - pattern: "granola"
+      action: check_product_update
+      product: granola
+    - pattern: "posthog"
+      action: check_product_update
+      product: posthog
+      space: 1-teamspace
+    - pattern: "digitalocean"
+      action: check_product_update
+      product: digitalocean
+      space: 1-teamspace
+    - pattern: "github"
+      action: check_product_update
+      product: github
+      space: 2-projectspace
+    # Competitor intel (research-worthy competitor news)
+    - pattern: "brickken"
+      action: prepare_for_research
+      type: competitor
+      topics: [rwa, tokenization, competitor]
+      reason: "Brickken - RWA competitor to Project Alpha"
+    - pattern: "vendorco"
+      action: prepare_for_research
+      type: competitor
+      topics: [rwa, tokenization, competitor]
+      reason: "Vendorco - RWA infrastructure competitor"
+    - pattern: "tokeny"
+      action: prepare_for_research
+      type: partnership
+      topics: [rwa, tokenization, erc3643]
+      reason: "Tokeny - ERC3643 partnership discussions"
+    - pattern: "lucfalempin"
+      action: prepare_for_research
+      type: partnership
+      topics: [rwa, tokenization, tokeny]
+      reason: "Luc Falempin - Tokeny Insights newsletter"
+    - pattern: "apex insights"
+      action: prepare_for_research
+      topics: [finance, markets, investing]
+      reason: "Apex Group — market insights, user wants to keep"
+    # Events (low priority, check for specific asks)
+    - pattern: "paris blockchain"
+      action: archive_only
+      type: event
+    - pattern: "consensus"
+      action: archive_only
+      type: event
+    - pattern: "popcorn"
+      action: archive_only
+      type: event
+    - pattern: "berkeley rdi"
+      action: archive_only
+      type: event
+      reason: "Berkeley RDI summit promos (Agentic AI, etc.)"
+    - pattern: "uvecon"
+      action: archive_only
+      type: event
+      reason: "UVECON.VC event invites"
+    - pattern: "agentic ai summit"
+      action: archive_only
+      type: event
+    - pattern: "hummingbot botcamp"
+      action: archive_only
+      type: event
+      reason: "Hummingbot Botcamp updates — tools newsletter"
+    # Newsletters that should be routed to research (not archived)
+    - pattern: "cerebral valley"
+      action: prepare_for_research
+      type: newsletter
+      topics: [ai, ecosystem, events, jobs]
+      reason: "AI ecosystem digest — hackathons, jobs, events"
+    - pattern: "support5@vendor.example.com"
+      action: prepare_for_research
+      type: newsletter
+      topics: [ai, ecosystem]
+    # Hackathon/event newsletters (per ENG-2026-0521-024) — routed through
+    # prepare_for_research (implemented, safe) rather than a dedicated
+    # scan_for_events action, which does NOT exist in newsletter.py yet.
+    # Full vision (parse body for hackathon/CFP dates, create DEADLINE tasks
+    # automatically) needs new processor code — see next_actions.org task
+    # "Mail rules: add scan_for_events action" for the scoped follow-up.
+    - pattern: "dev.to"
+      action: prepare_for_research
+      type: newsletter
+      topics: [hackathons, dev-community]
+      reason: "DEV Community digest — hackathon/challenge announcements"
+    - pattern: "latent.space"
+      action: prepare_for_research
+      type: newsletter
+      topics: [ai, hackathons]
+    - pattern: "ethglobal"
+      action: prepare_for_research
+      type: newsletter
+      topics: [hackathons, web3]
+    - pattern: "mlh"
+      action: prepare_for_research
+      type: newsletter
+      topics: [hackathons]
+      reason: "Major League Hacking"
+    - pattern: "devfolio"
+      action: prepare_for_research
+      type: newsletter
+      topics: [hackathons]
+    - pattern: "lablab"
+      action: prepare_for_research
+      type: newsletter
+      topics: [hackathons, ai]
+    - pattern: "encode club"
+      action: prepare_for_research
+      type: newsletter
+      topics: [hackathons, web3]
+    # LinkedIn notifications → SPAM (archive immediately)
+    - pattern: "linkedin"
+      action: archive_only
+      type: spam
+      reason: "LinkedIn notification spam"
+    - pattern: "(via linkedin)"
+      action: archive_only
+      type: spam
+    - pattern: "adinda"
+      action: archive_only
+      type: spam
+    - pattern: "gaja (via"
+      action: archive_only
+      type: spam
+    - pattern: "nicolas (via"
+      action: archive_only
+      type: spam
+    # Promotional emails → archive
+    - pattern: "revolut"
+      action: archive_only
+      type: promo
+    - pattern: "ready.co"
+      action: archive_only
+      type: service
+      reason: "Argent/Ready wallet notifications"
+    - pattern: "okx"
+      action: archive_only
+      type: promo
+      reason: "OKX exchange promos (rewards, bonuses, campaigns)"
+    - pattern: "lego"
+      action: archive_only
+      type: receipt
+      reason: "LEGO Shop order confirmations + shipping notifications"
+    - pattern: "legoshop"
+      action: archive_only
+      type: receipt
+    - pattern: "pecb"
+      action: archive_only
+      type: promo
+      reason: "PECB partnership/training offers"
+    - pattern: "qershore"
+      action: archive_only
+      type: promo
+      reason: "PECB sender — Qershore Berisha cold outreach"
+    - pattern: "swisscom"
+      action: archive_only
+      type: promo
+    - pattern: "hotels.com"
+      action: archive_only
+      type: promo
+    - pattern: "booking.com"
+      action: archive_only
+      type: promo
+    # Automated reports → archive
+    - pattern: "noreply-analytics@google"
+      action: archive_only
+      type: automated_report
+
+  # AI/LLM API provider invoices & receipts (per ENG-2026-0521-023) — for
+  # API cost tracking. Matching a sender here tags the email FINANCE (see
+  # classifier.py api_cost_match block, added 2026-07-02); if it also has a
+  # PDF attachment, the existing FINANCE+has_pdf check routes it to the
+  # accounting processor — same mechanism "invoice"/"racun" subject matches
+  # already use. This gets provider invoices into accounting.org today.
+  # A dedicated per-provider API-cost ledger (amount/currency/date broken
+  # out by provider, not just filed as a generic invoice) is a separate,
+  # larger follow-up — see "Mail rules: add api_cost_providers group" in
+  # next_actions.org for the original ask.
+  api_cost_providers:
+    - pattern: "x.ai"
+      reason: "xAI API billing"
+    - pattern: "openrouter"
+    - pattern: "openai.com"
+    - pattern: "anthropic.com"
+      reason: "Anthropic API/Console billing"
+    - pattern: "google cloud"
+      reason: "Google Cloud AI billing — narrow pattern, avoid catching unrelated GCP mail"
+    - pattern: "perplexity.ai"
+    - pattern: "exa.ai"
+    - pattern: "serpapi"
+    - pattern: "jina.ai"
+
+  # Senders to always ignore (SPAM)
+  ignore:
+    - pattern: "baerskin"
+      reason: spam
+    - pattern: "tactical"
+      reason: spam
+    # Cold-email outreach (sales prospecting using fake "Re:" subjects).
+    # These come from disposable .shop / .top / .xyz domains with no
+    # list-unsubscribe header and personalised first names like "Emma".
+    - pattern: "@hirepartners.shop"
+      reason: "cold sales — bookkeeping outreach with fake Re: subject"
+    - pattern: "hirepartners"
+      reason: "cold sales — bookkeeping outreach (sender name variants)"
+
+# =============================================================================
+# CALENDAR RULES (Google Calendar invitations and reminders)
+# =============================================================================
+#
+# Calendar invite processing logic:
+# 1. Check if event exists in calendar.org (by event ID or title+date match)
+# 2. Check if event date has passed
+# 3. Apply action based on state:
+#    - Event exists in calendar.org → mark read, archive (already synced)
+#    - Event has passed → mark read, archive
+#    - New invitation (not in calendar) → ACTIONABLE (needs response)
+#    - Cancellation → check if in calendar, remove if so, archive email
+#
+
+calendar:
+  # Notification senders
+  notification_senders:
+    - "noreply1@service.example.com"
+    - "calendar1@service.example.com"
+
+  # Event types
+  events:
+    invitation:
+      patterns:
+        - "invitation:"
+        - "invited you to"
+      action: check_calendar_sync
+      fallback_action: ACTIONABLE
+      reason: "New invite - check if already synced, else needs response"
+    updated_invitation:
+      patterns:
+        - "updated invitation:"
+        - "has been updated"
+      action: check_calendar_sync
+      fallback_action: INFORMATIONAL
+      reason: "Update - check if synced, archive if so"
+    reminder:
+      patterns:
+        - "reminder:"
+        - "upcoming event"
+      action: check_event_passed
+      archive_if_passed: true
+      reason: "Reminder - archive if event has passed"
+    accepted:
+      patterns:
+        - "accepted:"
+        - "has accepted"
+      action: INFORMATIONAL
+      archive: true
+    declined:
+      patterns:
+        - "declined:"
+        - "has declined"
+      action: INFORMATIONAL
+      archive: true
+    canceled:
+      patterns:
+        - "canceled:"
+        - "has been canceled"
+        - "cancelled:"
+      action: check_calendar_remove
+      archive: true
+      reason: "Remove from calendar.org if present"
+
+# =============================================================================
+# SUBJECT RULES (match by email subject line)
+# =============================================================================
+
+subjects:
+  # Calendar-related subjects → route to calendar processor
+  calendar:
+    - pattern: "invitation:"
+      action: check_calendar_sync
+    - pattern: "reminder:"
+      action: check_event_passed
+    - pattern: "updated invitation:"
+      action: check_calendar_sync
+    - pattern: "accepted:"
+      action: archive_only
+    - pattern: "declined:"
+      action: archive_only
+    - pattern: "canceled:"
+      action: check_calendar_remove
+
+  # Finance-related subjects → Add FINANCE track
+  finance:
+    # DUNNING FIRST. These must precede the generic "payment" pattern below,
+    # because matching is first-hit and "payment" swallows every one of them.
+    # Measured 2026-09-01: "€7.00 payment to X was unsuccessful", "US$24.40
+    # payment to Cursor was unsuccessful again", "We couldn't process your
+    # DigitalOcean payment" and "Payment required for team Acme" all
+    # matched "payment" and were routed to accounting as if they were
+    # receipts. Four vendors were failing on one dead card and the notices
+    # were filed as bookkeeping instead of surfacing — the account owner
+    # learned of it from a manual backlog sweep, not from the triage.
+    #
+    # A receipt is bookkeeping. A failed charge is an outage with a bill
+    # attached, and it belongs in front of a human.
+    - pattern: "unsuccessful"
+      action: surface_actionable
+      reason: "Failed charge — card or billing problem, not a receipt"
+    - pattern: "payment required"
+      action: surface_actionable
+    - pattern: "payment failed"
+      action: surface_actionable
+    - pattern: "couldn't process"
+      action: surface_actionable
+    - pattern: "could not process"
+      action: surface_actionable
+    - pattern: "declined"
+      action: surface_actionable
+    - pattern: "past due"
+      action: surface_actionable
+    - pattern: "risk of suspension"
+      action: surface_actionable
+      reason: "Service about to be cut off — GCP dunning wording"
+    - pattern: "invoice"
+      action: route_to_accounting
+    - pattern: "racun"
+      action: route_to_accounting
+      reason: "Slovenian: invoice"
+    - pattern: "payment"
+    - pattern: "obveznosti"
+      reason: "Slovenian: obligations"
+    - pattern: "terjatve"
+      reason: "Slovenian: receivables"
+    - pattern: "pooblastilo"
+      reason: "Slovenian: authorization"
+    # Tax / overdue / dunning notices — user must see, not just forward
+    - pattern: "opomin"
+      action: surface_actionable
+      reason: "Slovenian: payment reminder / dunning notice"
+    - pattern: "davčna"
+      action: surface_actionable
+      reason: "Slovenian: tax (urgent)"
+    - pattern: "davcna"
+      action: surface_actionable
+      reason: "Slovenian: tax (urgent, ASCII)"
+    - pattern: "tax notice"
+      action: surface_actionable
+    - pattern: "overdue"
+      action: surface_actionable
+
+# =============================================================================
+# BODY RULES (match by email body content)
+# =============================================================================
+
+body:
+  # Newsletter indicators
+  # action: archive_only made explicit here (2026-07-02) — classifier.py previously
+  # detected these as NEWSLETTER but never set newsletter_action, so items only
+  # matched via body/domain (not a sender rule) fell through to a dangerous
+  # default in mail/processors/newsletter.py's batch_process_newsletters(),
+  # which archives unrecognized actions with NO inbox entry. Fixed classifier.py
+  # to default newsletter_action='archive_only' for domain/body matches too;
+  # these explicit fields are belt-and-suspenders documentation of that default.
+  newsletter:
+    - pattern: "unsubscribe"
+      action: archive_only
+    - pattern: "view in browser"
+      action: archive_only
+    - pattern: "email preferences"
+      action: archive_only
+    - pattern: "opt out"
+      action: archive_only
+    - pattern: "weekly digest"
+      action: archive_only
+    - pattern: "still waiting for your response"
+      action: archive_only
+      reason: "LinkedIn spam"
+
+# =============================================================================
+# DOMAIN RULES (match by sender domain)
+# =============================================================================
+
+domains:
+  newsletter:
+    - "substack.com"
+    - "beehiiv.com"
+    - "convertkit.com"
+    - "mailchimp.com"
+
+# =============================================================================
+# GITHUB RULES (special handling for GitHub notifications)
+# =============================================================================
+#
+# GitHub notifications are routed to the specialized GitHubProcessor which:
+# - Fetches current PR/Issue state via gh CLI
+# - Finds linked org tasks by :EXTERNAL_ID:
+# - Auto-updates tasks when issues/PRs close
+# - Surfaces only emails needing human reply
+#
+
+github:
+  # Notification sender (routed to GitHubProcessor)
+  notification_senders:
+    - "noreply6@service.example.com"
+
+  # Event types — keys MUST match the literal X-GitHub-Reason header values.
+  # Reference: https://docs.github.com/en/rest/activity/notifications
+  #
+  # Policy: GitHub email is a duplicate of the GitHub notification feed.
+  # The user triages real action items via `gh api notifications` / the
+  # GitHub web UI / the /triage-github skill, NOT via email. So every
+  # github email gets archived after classification — the only exceptions
+  # are security_advisory (often surfaces in email before being visible
+  # elsewhere). The category stays "github" + action "task" for the few
+  # ACTIONABLE ones so they're visible in scan summaries, but archive:true
+  # keeps the inbox clean.
+  events:
+    review_requested:
+      action: INFORMATIONAL
+      archive: true
+    mention:
+      action: INFORMATIONAL
+      archive: true
+    team_mention:
+      action: INFORMATIONAL
+      archive: true
+    assign:
+      action: INFORMATIONAL
+      archive: true
+    changes_requested:
+      action: INFORMATIONAL
+      archive: true
+    author:                    # comment on a thread you opened
+      action: INFORMATIONAL
+      archive: true
+    state_change:              # merged / closed / reopened
+      action: INFORMATIONAL
+      archive: true
+    comment:
+      action: INFORMATIONAL
+      archive: true
+    approved:
+      action: INFORMATIONAL
+      archive: true
+    push:
+      action: INFORMATIONAL
+      archive: true
+    subscribed:
+      action: INFORMATIONAL
+      archive: true
+    manual:
+      action: INFORMATIONAL
+      archive: true
+    ci_activity:
+      action: INFORMATIONAL
+      archive: true
+    your_activity:
+      action: INFORMATIONAL
+      archive: true
+    security_advisory:         # surface security advisories
+      action: ACTIONABLE
+      priority: HIGH
+
+  # Keywords that make GitHub emails ACTIONABLE (legacy fallback)
+  actionable_keywords:
+    - "assigned to you"
+    - "requested your review"
+    - "mentioned you"
+    - "you were requested"
+    - "your action is requested"
+
+  # Keywords that make GitHub emails INFORMATIONAL (legacy fallback)
+  informational_keywords:
+    - "merged"
+    - "closed"
+    - "commented"
+    - "pushed"
+    - "approved"
+
+  # Repo patterns for routing
+  repos: []
+  # Space-specific: Add repo rules in {space}/mail-rules.yaml
+  # Example:
+  #   - pattern: "org-name/project-alpha"
+  #     space: 2-projectspace
+  #     priority: HIGH
+  #     fetch_context: true
+
+# =============================================================================
+# N8N RULES (workflow automation platform)
+# =============================================================================
+#
+# n8n notifications for workspace management - version updates, alerts, etc.
+# Similar to GitHub: route to check if action needed, archive if automated
+#
+
+n8n:
+  # Notification sender (identifies n8n emails)
+  notification_senders:
+    - "support1@vendor.example.com"
+    - "noreply4@service.example.com"
+    - "support3@vendor.example.com"
+
+  # Event types and their actions
+  events:
+    version_update:
+      patterns:
+        - "version expires"
+        - "forced update"
+        - "auto-update"
+        - "workspace will be"
+      action: INFORMATIONAL
+      type: maintenance
+      archive: true
+      reason: "Auto-updates handled by n8n Cloud, no action needed"
+    workflow_error:
+      patterns:
+        - "workflow failed"
+        - "execution error"
+        - "workflow stopped"
+      action: ACTIONABLE
+      priority: HIGH
+      reason: "Workflow failures need investigation"
+    usage_alert:
+      patterns:
+        - "execution limit"
+        - "approaching limit"
+        - "usage warning"
+      action: ACTIONABLE
+      priority: MEDIUM
+    security_alert:
+      patterns:
+        - "security"
+        - "vulnerability"
+        - "urgent security"
+      action: ACTIONABLE
+      priority: HIGH
+
+  # Workspace config
+  workspaces:
+    - name: team
+      space: 1-teamspace
+      url: "https://team.app.n8n.cloud"
+
+# =============================================================================
+# ACTIONS (cross-module integration)
+# =============================================================================
+
+actions:
+  # Route to accounting module
+  route_to_accounting:
+    description: "Route invoice/payment emails to accounting processor"
+    module: accounting
+    method: process_invoice
+    extract:
+      - invoice_number
+      - amount
+      - due_date
+      - vendor
+
+  # Prepare for research (high-quality newsletters like AVC, HBR, Ben's Bites)
+  prepare_for_research:
+    description: "Extract article URL, create inbox task for later research, archive email"
+    create_inbox_entry: true
+    entry_type: research_link
+    extract_url: true
+    url_patterns:
+      - "paragraph.com/@"    # AVC on Paragraph
+      - "hbr.org/"           # Harvard Business Review
+      - "stratechery.com/"   # Ben Thompson
+      - "bensbites.com/p/"   # Ben's Bites
+      - "veradiverdict.com/p/"  # Paul Veradittakit
+    destination: "org/inbox.org"
+    archive_email: true
+    tags: [research, reading]
+
+  # Check product update (tools we use)
+  check_product_update:
+    description: "Read product newsletter, check relevance to spaces, create task if actionable"
+    check_relevance: true
+    relevance_spaces:
+      - 0-personal   # Personal tools (Napkin, Granola)
+      - 1-teamspace   # Team tools (PostHog, n8n, DigitalOcean)
+      - 2-projectspace   # Project tools (GitHub, Claude)
+    create_task_if_relevant: true
+    destination: "org/inbox.org"
+    archive_email: true
+    tags_by_space:
+      0-personal: [tools]
+      1-teamspace: [team, infrastructure]
+      2-projectspace: [datacore, tools]
+
+  # Extract insights (like session-learning) - for manual deep research
+  extract_insights:
+    description: "Extract strategic insights from research content"
+    create_zettel: true
+    zettel_template: research-insight
+    topics_from: sender_config
+    destination: "3-knowledge/research/"
+
+  # Archive only (no org entry)
+  archive_only:
+    description: "Archive email without creating org entry"
+    gmail_archive: true
+    gmail_label: "datacore/archived"
+
+# =============================================================================
+# THREAD RULES (ongoing conversations)
+# =============================================================================
+
+threads:
+  # Threads that should always be ACTIONABLE
+  actionable: []
+  # Space-specific: Add thread rules in {space}/mail-rules.yaml
+  # Example:
+  #   - subject_contains: "Fundraising"
+  #     priority: HIGH
+  #     tags: [business, fundraising]

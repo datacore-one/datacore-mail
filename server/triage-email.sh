@@ -18,6 +18,12 @@ STATE_DIR="$DATA_DIR/.datacore/state/mail"
 AUDIT_LOG="$STATE_DIR/audit.jsonl"
 LOG_PREFIX="[email-triage]"
 
+# The host's own settings (MAIL_TRIAGE_ACCOUNTS among them): fleet .env, then local.env.
+for _env in "${DATACORE_ROOT:-$HOME/Data}/.datacore/env/.env" "${DATACORE_ROOT:-$HOME/Data}/.datacore/env/local.env"; do
+    # shellcheck disable=SC1090
+    [ -r "$_env" ] && { set -a; . "$_env"; set +a; }
+done
+
 mkdir -p "$STATE_DIR"
 
 RUN_ID="$(date -u '+%Y%m%dT%H%M%SZ')"
@@ -67,7 +73,16 @@ TOTAL_PROCESSED=0
 TOTAL_ERRORS=0
 ACCOUNT_RESULTS=()
 
-for ACCOUNT in "heidi@example.com" "grace@example.com"; do
+# The accounts are the installation's own: MAIL_TRIAGE_ACCOUNTS, space-separated, from
+# the host's environment (never this public file). Publishing replaced the real ones
+# here with placeholders, and the box then "scanned" two fake inboxes and reported them
+# clean for two nights (2026-09-24/25). No setting is a loud failure, never a clean run.
+if [ -z "${MAIL_TRIAGE_ACCOUNTS:-}" ]; then
+    echo "$LOG_PREFIX ERROR: MAIL_TRIAGE_ACCOUNTS is not set -- no inbox was scanned" >&2
+    exit 2
+fi
+# shellcheck disable=SC2086  # word-splitting the list is the point
+for ACCOUNT in $MAIL_TRIAGE_ACCOUNTS; do
     SAFE_NAME="$(echo "$ACCOUNT" | tr '@' '_' | tr '.' '_')"
     CACHE_FILE="$STATE_DIR/scan_cache_${SAFE_NAME}.json"
     SCAN_LOG="$STATE_DIR/scan_${SAFE_NAME}_${RUN_ID}.log"

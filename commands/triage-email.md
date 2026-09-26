@@ -99,7 +99,7 @@ python3 .datacore/modules/mail/lib/email_scanner.py \
 ```markdown
 ### Email: Tasks Created
 
-- N new tasks created in next_actions.org
+- N new tasks captured in the account space's inbox.org
 - N items skipped (already tracked)
 - Tasks tagged :AI:mail: for nightshift processing
 ```

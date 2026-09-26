@@ -45,6 +45,15 @@ def _import_gmail_adapter():
     return mod.GmailAdapter, mod.Email
 
 
+def _import_task_creator():
+    """Import the sibling lib/task_creator.py however this file was loaded."""
+    lib_dir = str(Path(__file__).resolve().parent)
+    if lib_dir not in sys.path:
+        sys.path.insert(0, lib_dir)
+    import task_creator
+    return task_creator
+
+
 # ---------------------------------------------------------------------------
 # 1. load_rules
 # ---------------------------------------------------------------------------
@@ -92,7 +101,60 @@ def _deep_merge(base: Dict, override: Dict) -> Dict:
 # 2. classify_email
 # ---------------------------------------------------------------------------
 
+# Actions that take a message out of the inbox (archive directly, or archive
+# after forwarding / digesting / queueing it for research).
+_ARCHIVING_ACTIONS = {
+    "auto_archive", "forward", "aggregate_daily_news", "prepare_for_research",
+    "check_product_update", "check_event_passed", "check_calendar_sync",
+    "check_calendar_remove",
+}
+
+
+def _is_protected_sender(sender: str, rules: Dict[str, Any]) -> Optional[str]:
+    """Return the matching protected domain if the sender must never be auto-archived.
+
+    Government, compliance, banking and company-registration mail carries legal
+    deadlines. It was archived as promotion because an "unsubscribe" footer or a
+    blanket "revolut" newsletter rule matched first (ENG-2026-0504-020,
+    ENG-2026-08-05-013). Matching is by domain suffix, so "gov.si" covers
+    fu.gov.si and ujp.gov.si.
+    """
+    domain = sender.rsplit("@", 1)[-1].strip().strip(">").lower() if "@" in sender else ""
+    if not domain:
+        return None
+    for entry in ((rules.get("protected") or {}).get("domains") or []):
+        d = str(entry).lower().lstrip(".@")
+        if d and (domain == d or domain.endswith("." + d)):
+            return d
+    return None
+
+
 def classify_email(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Classify a single email, then apply the protected-sender guard.
+
+    A sender listed under `protected.domains` in the rules is never given an
+    action that archives it: whatever rule matched (newsletter body footer,
+    promo sender, accounting forward), the mail stays in the inbox for the
+    owner, flagged HIGH and tagged "official". A rule that already keeps it in
+    the inbox (task / review) is kept, with the tag added.
+    """
+    result = _classify_by_rules(email, rules)
+    protected = _is_protected_sender((email.sender or "").lower(), rules)
+    if protected:
+        tags = list(result.get("tags") or [])
+        if "official" not in tags:
+            tags.append("official")
+        if result.get("action") in _ARCHIVING_ACTIONS or result.get("category") == "auto_archive":
+            return _result("actionable", "review", "HIGH",
+                           f"Protected sender ({protected}) — never auto-archived "
+                           f"(would have been: {result.get('rule_name')})",
+                           tags, "protected_sender")
+        result = dict(result, tags=tags)
+    return result
+
+
+def _classify_by_rules(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
     """
     Classify a single email against the rules.
 
@@ -246,6 +308,16 @@ def classify_email(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
     # ------------------------------------------------------------------
     cal_config = rules.get("calendar", {})
     cal_senders = [s.lower() for s in (cal_config.get("notification_senders") or [])]
+    # Phishing invites first: a credential-harvest lure arrives as an ordinary
+    # invitation from the calendar sender and would otherwise be archived as a
+    # routine sync. It is flagged to the owner and never answered (no RSVP,
+    # not even a decline — a reply confirms the address is live).
+    if sender in cal_senders or subject.startswith(("invitation:", "updated invitation:")):
+        lure = _phishing_lure(subject, body or snippet, cal_config)
+        if lure:
+            return _result("phishing", "flag_phishing", "HIGH",
+                           f"Suspected phishing invite ({lure!r}) — do not open links or respond",
+                           ["phishing", "calendar", "security"], "cal_phishing")
     if sender in cal_senders:
         # Check subject patterns for each event type
         for event_type, event_cfg in (cal_config.get("events") or {}).items():
@@ -409,6 +481,15 @@ def classify_email(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
 
     return _result("unknown", "review", "MEDIUM",
                    "No matching rule — needs manual review", [], "unknown")
+
+
+def _phishing_lure(subject: str, body: str, cal_config: Dict[str, Any]) -> Optional[str]:
+    """Return the first credential-harvest lure pattern found in an invite, or None."""
+    text = f"{subject}\n{body}"
+    for pat in ((cal_config.get("phishing") or {}).get("lure_patterns") or []):
+        if str(pat).lower() in text:
+            return str(pat)
+    return None
 
 
 def _ollama_classify(sender: str, sender_name: str, subject: str, snippet: str):
@@ -627,13 +708,22 @@ def scan_inbox(
         "calendar": [],
         "github": [],
         "n8n": [],
+        "phishing": [],
         "unknown": [],
     }
 
     all_classified = []
 
+    account_lc = (account_address or "").lower()
     for email in inbox_emails:
         classification = classify_email(email, rules)
+        # Addressed to me (To), or only CC'd? Unknown recipients count as "to me".
+        recipients = [str(r).lower() for r in (getattr(email, "recipients", None) or [])]
+        to_me = not recipients or not account_lc or any(account_lc in r for r in recipients)
+        if not to_me and classification["category"] == "actionable" and classification["action"] == "task":
+            # CC only: keep it in the inbox for reading, but it is not my task.
+            classification = dict(classification, action="review",
+                                  reason=classification["reason"] + " (CC only — not addressed to me)")
         classified = {
             "id": email.id,
             "thread_id": email.thread_id,
@@ -645,6 +735,7 @@ def scan_inbox(
             "labels": email.labels,
             "is_unread": email.is_unread,
             "gmail_url": email.gmail_url,
+            "to_me": to_me,
             "category": classification["category"],
             "action": classification["action"],
             "priority": classification["priority"],
@@ -695,6 +786,11 @@ def execute_auto_actions(
       - check_product_update  → newsletter processor (relevance check), archive
       - check_event_passed    → archive (event is in the past)
       - check_calendar_sync   → archive (calendar already synced via Google)
+      - task (actionable)     → inbox task in {space_path}/org/inbox.org linked
+                                to the email (the email stays in the inbox)
+
+    Never archived here: phishing (flagged in the summary, never answered),
+    protected senders (classified actionable/review), CC-only mail, unknowns.
 
     After processing the daily-news bucket, a single digest task is created
     in `{space_path}/org/daily_news.org` (via newsletter._create_daily_digest_task).
@@ -785,6 +881,26 @@ def execute_auto_actions(
                 errors.append({"id": msg_id, "action": "forward", "error": "send_email() returned None"})
         except Exception as exc:
             errors.append({"id": msg_id, "action": "forward", "error": str(exc)})
+
+    # --- Actionable mail addressed to me -> inbox task linked to the email ---
+    # Captured into the space's inbox.org only (GTD single capture point); the
+    # task carries the Gmail link. Idempotent on the message id, so the same
+    # email seen on several nightly runs stays one task.
+    actionable = [c for c in scan_results["categories"].get("actionable", [])
+                  if c.get("action") == "task" and c.get("to_me", True)]
+    if actionable:
+        create_task_for_email = _import_task_creator().create_task_for_email
+        inbox_file = space_path / "org" / "inbox.org"
+        for classified in actionable:
+            msg_id = classified["id"]
+            try:
+                res = create_task_for_email(classified, "actionable", inbox_file)
+                if res.get("success"):
+                    processed.setdefault("task", []).append(msg_id)
+                else:
+                    errors.append({"id": msg_id, "action": "task", "error": res.get("error")})
+            except Exception as exc:
+                errors.append({"id": msg_id, "action": "task", "error": str(exc)})
 
     # --- Calendar (passed event / sync notification) ---
     # No dedicated processor; design intent is "info-only, archive".
@@ -926,6 +1042,16 @@ def format_summary(
                     more = f" +{len(ids) - 3} more" if len(ids) > 3 else ""
                     lines.append(f"  - ({len(ids)}×) {cause}  [{shown}{more}]")
             lines.append("")
+
+    # Suspected phishing — first, so it is never missed
+    phishing = categories.get("phishing", [])
+    if phishing:
+        lines.append(f"### Suspected phishing ({len(phishing)}) — do not open links or respond")
+        for e in phishing:
+            sender_display = e.get("sender_name") or e.get("sender", "unknown")
+            lines.append(f"- **{sender_display}**: {e['subject']} — {e.get('reason', '')}")
+            lines.append(f"  {e.get('gmail_url', '')}")
+        lines.append("")
 
     # Actionable
     actionable = categories.get("actionable", [])
@@ -1119,11 +1245,16 @@ Examples:
     # ------------------------------------------------------------------
     action_results = None
     if args.execute and not args.dry_run:
-        print("[email_scanner] Executing auto-actions...", file=sys.stderr)
+        # File into the space that owns the account (its .datacore/mail.yaml
+        # declares it): a team mailbox's tasks and digests go to the team space.
+        resolve_account_space = _import_task_creator().resolve_account_space
+        space_path = resolve_account_space(Path.home() / "Data", args.account)
+        print(f"[email_scanner] Executing auto-actions (space: {space_path.name})...", file=sys.stderr)
         action_results = execute_auto_actions(
             scan_results=scan_results,
             account_address=args.account,
             forward_to=args.forward_to,
+            space_path=space_path,
         )
         processed_total = sum(len(v) for v in action_results.get("processed", {}).values())
         processed_breakdown = ", ".join(

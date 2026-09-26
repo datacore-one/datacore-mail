@@ -2,7 +2,10 @@
 """Create org-mode tasks from email scan results.
 
 Reads scan output from email_scanner, determines which items need action,
-creates tasks in the appropriate space's next_actions.org with :email: tags.
+captures tasks into the inbox.org of the space that owns the scanned account
+(the space whose .datacore/mail.yaml declares it; 0-personal otherwise), with
+:email: tags. New tasks go to the inbox only (GTD single capture point); the
+inbox processor clarifies them into task lists.
 
 Usage:
     python3 task_creator.py --scan-file data/scan_cache.json --data-dir ~/Data
@@ -27,27 +30,100 @@ TASK_CATEGORIES = {"actionable", "unknown", "github"}
 GITHUB_TASK_ACTIONS = {"task", "create_task"}
 
 
-def _make_task_id(sender: str, email_id: str, today: str) -> str:
-    """Generate idempotent task ID: mail-{sender_short}-{id_short}-{date}."""
+def _make_task_id(sender: str, email_id: str) -> str:
+    """Generate idempotent task ID: mail-{sender_short}-{id_short}.
+
+    No date: the nightly scan looks back several days, so the same email is seen
+    on more than one run and must map to one task.
+    """
     # Shorten sender: strip domain, take first 12 chars
     sender_short = sender.split("@")[0] if "@" in sender else sender
     sender_short = sender_short[:12].replace(".", "-").replace("+", "-")
     id_short = email_id[:8] if len(email_id) >= 8 else email_id
-    return f"mail-{sender_short}-{id_short}-{today}"
+    return f"mail-{sender_short}-{id_short}"
 
 
-def _resolve_org_file(data_dir: Path, target_org: str | None) -> Path:
-    """Resolve the target org file, falling back through known locations."""
+def resolve_account_space(data_dir: Path, account: str | None) -> Path:
+    """The space that owns a mail account: the one whose .datacore/mail.yaml declares it.
+
+    A personal account lives in 0-personal; a team mailbox (info@, accounting@)
+    in the team space that declares it. Undeclared accounts fall back to
+    0-personal.
+    """
+    data_dir = Path(data_dir)
+    if account:
+        modules_dir = Path(__file__).resolve().parents[2]
+        if str(modules_dir) not in sys.path:
+            sys.path.insert(0, str(modules_dir))
+        from mail.module import MailModule
+        for acc in MailModule(data_root=data_dir).discover_configs():
+            if acc.address and acc.address.lower() == account.lower():
+                return acc.space_path
+    return data_dir / "0-personal"
+
+
+def _resolve_org_file(data_dir: Path, target_org: str | None, account: str | None = None) -> Path:
+    """Resolve the target org file: explicit override, else the account's space inbox."""
     if target_org:
         return Path(target_org)
+    return resolve_account_space(data_dir, account) / "org" / "inbox.org"
 
-    # Try 1-acme first (primary work space)
-    primary = data_dir / "1-acme" / "org" / "next_actions.org"
-    if primary.exists():
-        return primary
 
-    # Fall back to 0-personal
-    return data_dir / "0-personal" / "org" / "next_actions.org"
+def create_task_for_email(email: dict, cat: str, org_file: Path) -> dict:
+    """Capture one classified email as an inbox task linked to the original message.
+
+    Returns create_triage_task's result dict (success / skipped / error).
+    """
+    email_id = email.get("id", "")
+    sender = email.get("sender", "unknown")
+    sender_name = email.get("sender_name") or sender
+    subject = email.get("subject", "(no subject)")
+    gmail_url = email.get("gmail_url", "")
+    snippet = email.get("snippet", "")
+    priority = email.get("priority", "MEDIUM")
+    reason = email.get("reason", "")
+
+    task_id = _make_task_id(sender, email_id)
+
+    # Build heading
+    if cat == "unknown":
+        heading = f"Review email from {sender_name}: {subject[:60]}"
+    elif cat == "github":
+        heading = f"Act on GitHub email: {subject[:60]}"
+    else:
+        heading = f"Reply to {sender_name}: {subject[:60]}"
+
+    # Build Gmail URL org-link
+    external_url = f"[[{gmail_url}][View in Gmail]]" if gmail_url else gmail_url
+
+    properties = {
+        "TRIAGE_ID": task_id,
+        "EXTERNAL_URL": external_url,
+        "EXTERNAL_ID": f"gmail:{sender}/{email_id}",
+        "SOURCE": "email-triage",
+        "SENDER": sender,
+        "EMAIL_CATEGORY": cat,
+    }
+
+    # Context body: snippet and classification reason
+    context_lines = []
+    if snippet:
+        context_lines.append(f"Snippet: {snippet}")
+    if reason:
+        context_lines.append(f"Classified as: {reason}")
+    if priority:
+        context_lines.append(f"Priority: {priority}")
+    context_body = "\n".join(context_lines)
+
+    result = create_triage_task(
+        org_file=org_file,
+        heading=heading,
+        tags=["email"],
+        properties=properties,
+        context_body=context_body,
+        scheduled_date=date.today(),
+    )
+    return dict(result, id=result.get("id") or task_id, heading=heading)
 
 
 def create_tasks_from_scan(
@@ -64,8 +140,7 @@ def create_tasks_from_scan(
 
     Returns summary dict with: created, skipped, errors.
     """
-    today = date.today().isoformat()
-    org_file = _resolve_org_file(data_dir, target_org)
+    org_file = _resolve_org_file(data_dir, target_org, scan.get("account"))
 
     if not org_file.exists():
         return {
@@ -93,56 +168,13 @@ def create_tasks_from_scan(
 
             email_id = email.get("id", "")
             sender = email.get("sender", "unknown")
-            sender_name = email.get("sender_name") or sender
             subject = email.get("subject", "(no subject)")
-            gmail_url = email.get("gmail_url", "")
-            snippet = email.get("snippet", "")
-            priority = email.get("priority", "MEDIUM")
-            reason = email.get("reason", "")
-
             if not email_id:
                 continue
 
-            task_id = _make_task_id(sender, email_id, today)
-
-            # Build heading
-            if cat == "unknown":
-                heading = f"Review email from {sender_name}: {subject[:60]}"
-            elif cat == "github":
-                heading = f"Act on GitHub email: {subject[:60]}"
-            else:
-                heading = f"Reply to {sender_name}: {subject[:60]}"
-
-            # Build Gmail URL org-link
-            external_url = f"[[{gmail_url}][View in Gmail]]" if gmail_url else gmail_url
-
-            properties = {
-                "TRIAGE_ID": task_id,
-                "EXTERNAL_URL": external_url,
-                "EXTERNAL_ID": f"gmail:{sender}/{email_id}",
-                "SOURCE": "email-triage",
-                "SENDER": sender,
-                "EMAIL_CATEGORY": cat,
-            }
-
-            # Context body: snippet and classification reason
-            context_lines = []
-            if snippet:
-                context_lines.append(f"Snippet: {snippet}")
-            if reason:
-                context_lines.append(f"Classified as: {reason}")
-            if priority:
-                context_lines.append(f"Priority: {priority}")
-            context_body = "\n".join(context_lines)
-
-            result = create_triage_task(
-                org_file=org_file,
-                heading=heading,
-                tags=["email"],
-                properties=properties,
-                context_body=context_body,
-                scheduled_date=date.today(),
-            )
+            result = create_task_for_email(email, cat, org_file)
+            heading = result.get("heading")
+            task_id = result.get("id")
 
             if result.get("skipped"):
                 skipped += 1
@@ -175,7 +207,7 @@ def main():
     parser.add_argument("--data-dir", default=str(Path.home() / "Data"),
                         help="Path to Data directory (default: ~/Data)")
     parser.add_argument("--org-file", default=None,
-                        help="Target org file (default: 1-acme/org/next_actions.org)")
+                        help="Target org file (default: the account's space org/inbox.org)")
     parser.add_argument("--dry-run", action="store_true",
                         help="Show what would be created without writing")
     args = parser.parse_args()

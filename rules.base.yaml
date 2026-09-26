@@ -16,6 +16,30 @@ description: Default email classification rules
 # SENDER RULES (most specific - match by email address or name)
 # =============================================================================
 
+# =============================================================================
+# PROTECTED SENDERS (checked over every other rule — never auto-archived)
+# =============================================================================
+#
+# Government, compliance, banking and company-registration mail carries legal
+# deadlines. Whatever rule matches it (an "unsubscribe" footer, a promo sender
+# rule, an accounting forward), a sender whose domain ends in one of these stays
+# in the inbox, flagged HIGH and tagged "official". Suffix match: "gov.si"
+# covers fu.gov.si and ujp.gov.si. Add space/personal entries in the overlays.
+
+protected:
+  domains:
+    # Government
+    - "gov.si"                  # Slovenian government (FURS, UJP/AJPES e-invoices)
+    - "gov.uk"                  # UK government, incl. companieshouse.gov.uk, hmrc.gov.uk
+    - "gov"                     # US federal
+    - "europa.eu"               # EU institutions
+    # Company registration / registered office
+    - "companieshouse.gov.uk"
+    - "1stformations.co.uk"     # UK formation agent: renewals and compliance prompts
+    # Banks
+    - "revolut.com"
+    - "lon.si"                  # Hranilnica LON
+
 senders:
   # Senders that always trigger ACTIONABLE
   actionable: []
@@ -310,10 +334,9 @@ senders:
     - pattern: "nicolas (via"
       action: archive_only
       type: spam
-    # Promotional emails → archive
-    - pattern: "revolut"
-      action: archive_only
-      type: promo
+    # Revolut is a bank: it is under protected.domains below and is never
+    # auto-archived (a blanket "revolut" promo rule archived Revolut Business
+    # compliance alerts — "Your expenses are missing some info").
     - pattern: "ready.co"
       action: archive_only
       type: service
@@ -408,6 +431,23 @@ calendar:
   notification_senders:
     - "noreply1@service.example.com"
     - "calendar1@service.example.com"
+
+  # Credential-harvest lures in an invitation. Any match → category
+  # "phishing", flagged to the owner, never archived, never answered.
+  phishing:
+    lure_patterns:
+      - "verify your password"
+      - "verify your account"
+      - "verify your identity"
+      - "account verification"
+      - "confirm your password"
+      - "confirm your credentials"
+      - "will be suspended"
+      - "mailbox will be"
+      - "password expires"
+      - "re-enter your password"
+      - "login-microsoftonline"
+      - "unusual sign-in activity"
 
   # Event types
   events:

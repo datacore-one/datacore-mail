@@ -14,7 +14,7 @@ recall:
 ## Purpose
 
 Runs during nightshift overnight execution to triage email inboxes.
-Creates :AI:mail: tasks in next_actions.org for actionable items.
+Captures actionable items as tasks in the account space's inbox.org.
 
 ## Behavior
 

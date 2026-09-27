@@ -630,30 +630,31 @@ github:
   # Event types — keys MUST match the literal X-GitHub-Reason header values.
   # Reference: https://docs.github.com/en/rest/activity/notifications
   #
-  # Policy: GitHub email is a duplicate of the GitHub notification feed.
-  # The user triages real action items via `gh api notifications` / the
-  # GitHub web UI / the /triage-github skill, NOT via email. So every
-  # github email gets archived after classification — the only exceptions
-  # are security_advisory (often surfaces in email before being visible
-  # elsewhere). The category stays "github" + action "task" for the few
-  # ACTIONABLE ones so they're visible in scan summaries, but archive:true
-  # keeps the inbox clean.
+  # Policy (MEM-34, owner-approved promise 2026-09-26): each mail is judged
+  # on its own; nothing is archived in bulk by sender or type. A mail that
+  # asks the owner to do something -- review, reply to a mention, take an
+  # assignment, answer requested changes -- is a to-do: it stays in the inbox
+  # and becomes a task, and is archived AFTER it is handled
+  # (ENG-2026-0623-013). Only notifications that ask nothing (merged, pushed,
+  # CI, subscribed, own activity) are auto-archived. This replaces the older
+  # "archive every github email" rule (ENG-2026-0511-036), which archived
+  # review requests and @-mentions unread.
   events:
     review_requested:
-      action: INFORMATIONAL
-      archive: true
+      action: ACTIONABLE
+      priority: HIGH
     mention:
-      action: INFORMATIONAL
-      archive: true
+      action: ACTIONABLE
+      priority: HIGH
     team_mention:
-      action: INFORMATIONAL
-      archive: true
+      action: ACTIONABLE
+      priority: MEDIUM
     assign:
-      action: INFORMATIONAL
-      archive: true
+      action: ACTIONABLE
+      priority: HIGH
     changes_requested:
-      action: INFORMATIONAL
-      archive: true
+      action: ACTIONABLE
+      priority: HIGH
     author:                    # comment on a thread you opened
       action: INFORMATIONAL
       archive: true

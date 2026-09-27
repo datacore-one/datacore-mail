@@ -58,6 +58,12 @@ Each space can have independent `mail.yaml` config with different accounts and r
 ## Boundaries
 
 - Cannot delete emails permanently -- only archives/labels
+- Each mail is judged on its own (MEM-34). Never archive in bulk by sender,
+  type or search query without the owner's OK; archive by message id, one
+  judged mail at a time. A mail that asks the owner to act (review request,
+  @-mention, assignment, requested changes) is a to-do: handle it, then
+  archive it. Only mail that asks nothing (merged, pushed, CI) may be cleared
+  unread.
 - Cannot access accounts without OAuth consent
 - Tasks include `EXTERNAL_ID` and `EXTERNAL_URL` for Gmail deep links
 

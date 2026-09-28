@@ -31,7 +31,7 @@ Run the inbox scanner (uses cache if already run today):
 python3 .datacore/modules/mail/lib/email_scanner.py \
   --account grace@example.com \
   --days 3 \
-  --cache .datacore/modules/mail/data/scan_cache.json \
+  --cache .datacore/state/mail/scan_cache_<account>.json \
   --format json
 ```
 
@@ -45,7 +45,7 @@ Run the scanner again in execute mode to apply auto-actions (archive, label, for
 python3 .datacore/modules/mail/lib/email_scanner.py \
   --account grace@example.com \
   --days 3 \
-  --cache .datacore/modules/mail/data/scan_cache.json \
+  --cache .datacore/state/mail/scan_cache_<account>.json \
   --execute \
   --forward-to billing2@vendor.example.com
 ```
@@ -56,7 +56,7 @@ If `auto_task_create` is enabled (default: true), create tasks from actionable e
 
 ```bash
 python3 .datacore/modules/mail/lib/task_creator.py \
-  --scan-file .datacore/modules/mail/data/scan_cache.json \
+  --scan-file .datacore/state/mail/scan_cache_<account>.json \
   --data-dir ~/Data
 ```
 
@@ -68,7 +68,7 @@ Use the scan results to produce a markdown summary:
 python3 .datacore/modules/mail/lib/email_scanner.py \
   --account grace@example.com \
   --days 3 \
-  --cache .datacore/modules/mail/data/scan_cache.json \
+  --cache .datacore/state/mail/scan_cache_<account>.json \
   --format summary
 ```
 

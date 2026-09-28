@@ -46,7 +46,7 @@ Each space can have independent `mail.yaml` config with different accounts and r
 | `{space}/mail.yaml` | Space email account config |
 | `{space}/mail-rules.yaml` | Space-specific routing rules |
 | `.datacore/env/credentials/` | OAuth credentials and tokens |
-| `.datacore/modules/mail/data/scan_cache.json` | Cached scan results (gitignored) |
+| `.datacore/state/mail/scan_cache_<account>.json` | Cached scan results (host state, never inside the module -- MEM-63) |
 
 ## Setup
 

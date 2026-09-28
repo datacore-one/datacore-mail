@@ -8,7 +8,7 @@ summaries for /today briefings.
 
 Usage:
     python3 email_scanner.py --account grace@example.com --days 3 \
-        --cache data/scan_cache.json --format json
+        --cache ~/Data/.datacore/state/mail/scan_cache_<account>.json --format json
 
     python3 email_scanner.py --account grace@example.com --days 3 \
         --execute --forward-to billing2@vendor.example.com --format summary
@@ -1162,11 +1162,11 @@ Examples:
 
   # Scan live + write results to cache (production daemon pattern):
   python3 email_scanner.py --account grace@example.com \\
-      --cache data/scan_cache.json --format summary
+      --cache ~/Data/.datacore/state/mail/scan_cache_<account>.json --format summary
 
   # Replay/debug: load pre-scanned results without hitting Gmail:
   python3 email_scanner.py --account grace@example.com \\
-      --load-cache data/scan_cache.json --format summary
+      --load-cache ~/Data/.datacore/state/mail/scan_cache_<account>.json --format summary
         """,
     )
     parser.add_argument("--account", required=True,

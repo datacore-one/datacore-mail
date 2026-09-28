@@ -8,7 +8,7 @@ captures tasks into the inbox.org of the space that owns the scanned account
 inbox processor clarifies them into task lists.
 
 Usage:
-    python3 task_creator.py --scan-file data/scan_cache.json --data-dir ~/Data
+    python3 task_creator.py --scan-file ~/Data/.datacore/state/mail/scan_cache_<account>.json --data-dir ~/Data
 
 Output: JSON summary of created tasks.
 """

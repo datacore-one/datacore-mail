@@ -116,6 +116,11 @@ inbox.json lists the threads currently in the owner's Gmail inbox.
 
 
 def _build(d: Path) -> None:
+    # The agent gets what a real session gets: CLAUDE.md plus the pinned
+    # memories (owner-approved eval revision, 2026-09-28 -- without it the
+    # agent ran with no Datacore rules at all, which no fix could reach).
+    import agent_context
+    agent_context.write_context(d)
     from agent_eval import plant_stub
     (d / "inbox.json").write_text(json.dumps(INBOX, indent=2), encoding="utf-8")
     (d / "README.md").write_text(README, encoding="utf-8")

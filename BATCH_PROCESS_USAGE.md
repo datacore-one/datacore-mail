@@ -200,14 +200,14 @@ All three methods support space-specific rule merging (DIP-0002):
 # Rules are merged: base → space → local
 result = batch_process(
     emails,
-    space_path=Path('1-acme/'),  # Loads 1-acme/mail-rules.yaml
+    space_path=Path('1-acme/'),  # applies the rules file's spaces: 1-acme section
     address="user@example.com"
 )
 ```
 
 Rule layers:
 1. **Base**: `.datacore/modules/mail/rules.base.yaml` (PUBLIC)
-2. **Space**: `[space]/mail-rules.yaml` (SPACE)
-3. **Local**: `.datacore/modules/mail/rules.local.yaml` (PRIVATE)
+2. **Space**: the `spaces: [space]` section of `0-personal/.datacore/module-data/mail/rules.yaml`
+3. (retired 2026-09-29: there is no local overlay; everything is in the one file)
 
 Later rules override/extend earlier ones.

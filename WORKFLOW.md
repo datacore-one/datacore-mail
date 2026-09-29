@@ -348,5 +348,5 @@ Pure spam (no info value)? → YES DELETE
 ## See Also
 
 - `.datacore/modules/mail/README.md` - Technical documentation
-- `1-teamspace/.datacore/mail.yaml` - Account configuration
-- `0-personal/.datacore/mail-rules.yaml` - Personal sender rules
+- `1-teamspace/.datacore/module-data/mail/mail.yaml` - Account configuration
+- `0-personal/.datacore/module-data/mail/rules.yaml` - All sender rules (one file)

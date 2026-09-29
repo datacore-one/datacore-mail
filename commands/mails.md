@@ -51,7 +51,7 @@ recall:
 ### Integration Points
 
 - **mail.yaml** - Per-space account configuration
-- **mail-rules.yaml** - Space-specific and base sender rules
+- **`0-personal/.datacore/module-data/mail/rules.yaml`** - all sender rules, one file (team rules under `spaces:`)
 - **Gmail API** - OAuth integration for reading, archiving, replying
 - **inbox.org** - Task creation destination for ACTIONABLE emails
 - **CRM** - Contact note creation for new organizations
@@ -504,7 +504,7 @@ Audit log: .datacore/state/mail-logs/2026-01-12-173045-main.md
 ### Auto-Process Conditions
 
 **CONSERVATIVE**: Only auto-archive when ALL conditions are met:
-- Sender matches an EXPLICIT `spam` rule in mail-rules.yaml
+- Sender matches an EXPLICIT `spam` rule in the rules file
 - OR: GitHub CI notification (workflow runs, dependabot) - NOT PR comments/reviews
 
 **NEVER auto-archive:**
@@ -533,7 +533,7 @@ Always present for review:
 | `reply` | Send email via adapter.reply() |
 | `delegate` | Slovenian delegation reply + follow-up |
 | `aggregate` | Add to daily digest task |
-| `add_rule` | Update rules.base.yaml or mail-rules.yaml |
+| `add_rule` | Update `0-personal/.datacore/module-data/mail/rules.yaml` (never the module's rules.base.yaml) |
 
 ### Task Format
 
@@ -579,15 +579,15 @@ created: YYYY-MM-DD
 ## Files Used
 
 **Read:**
-- `{space}/mail.yaml` - Account configuration
-- `{space}/mail-rules.yaml` - Space-specific rules
+- `{space}/.datacore/module-data/mail/mail.yaml` - Account configuration
+- `0-personal/.datacore/module-data/mail/rules.yaml` - All rules
 - `.datacore/modules/mail/rules.base.yaml` - Base rules
 - `{space}/org/calendar.org` - For calendar checks
 
 **Write:**
 - `{space}/org/inbox.org` - Task creation
 - `{space}/3-knowledge/pages/General Contact - *.md` - CRM notes
-- `{space}/mail-rules.yaml` - Rule updates
+- `0-personal/.datacore/module-data/mail/rules.yaml` - Rule updates
 
 **Execute:**
 - Gmail API via adapter (mark_read, archive, reply)
@@ -620,7 +620,7 @@ created: YYYY-MM-DD
 - Create tasks in inbox.org
 - Create CRM notes for contacts
 - Send replies via adapter.reply()
-- Update mail-rules.yaml with new sender rules
+- Update `0-personal/.datacore/module-data/mail/rules.yaml` with new sender rules
 
 **YOU CANNOT:**
 - Trash emails. Gmail purges Trash after 30 days, so trashing is a deferred
@@ -639,7 +639,7 @@ created: YYYY-MM-DD
 - Ask user before sending any email
 - Show preview before any bulk action (>10 emails)
 - Report what was processed at the end
-- Offer to add spam senders to mail-rules.yaml
+- Offer to add spam senders to `0-personal/.datacore/module-data/mail/rules.yaml`
 
 ## Error Handling
 
@@ -656,7 +656,7 @@ Solution:
 No mail configuration found in {space}.
 
 Solution:
-  1. Create {space}/mail.yaml:
+  1. Create {space}/.datacore/module-data/mail/mail.yaml:
      accounts:
        - name: main
          address: bob@example.com
@@ -686,7 +686,7 @@ Solution:
 
 **Rules file syntax error:**
 ```
-Error parsing {space}/mail-rules.yaml
+Error parsing 0-personal/.datacore/module-data/mail/rules.yaml
 
 Solution:
   Check YAML syntax. Common issues:
@@ -713,7 +713,7 @@ mail:
   auto_process_all: true       # Use defaults for everything, no menus
 ```
 
-**Per-space configuration** in `{space}/mail.yaml`:
+**Per-space configuration** in `{space}/.datacore/module-data/mail/mail.yaml`:
 ```yaml
 accounts:
   - name: main
@@ -723,7 +723,7 @@ accounts:
     destination: org/inbox.org
 ```
 
-**Per-space rules** in `{space}/mail-rules.yaml`:
+**Rules** in `0-personal/.datacore/module-data/mail/rules.yaml` (a space's own rules under `spaces: {<space>: ...}`):
 ```yaml
 senders:
   spam:

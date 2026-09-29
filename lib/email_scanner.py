@@ -2,7 +2,7 @@
 """
 Email Scanner — Core triage classification engine for the mail module.
 
-Pulls emails from Gmail, classifies them against rules.base.yaml, groups them
+Pulls emails from Gmail, classifies them against the one rules file (lib/mail_rules.py), groups them
 into categories, optionally executes auto-actions, and generates markdown
 summaries for /today briefings.
 
@@ -30,7 +30,6 @@ import yaml
 
 # Module root: .datacore/modules/mail/
 MODULE_ROOT = Path(__file__).parent.parent
-RULES_DEFAULT = MODULE_ROOT / "rules.base.yaml"
 
 # ---------------------------------------------------------------------------
 # Adapter import (relative, works when run from repo root or directly)
@@ -59,43 +58,32 @@ def _import_task_creator():
 # 1. load_rules
 # ---------------------------------------------------------------------------
 
-def load_rules(rules_path: Optional[str] = None) -> Dict[str, Any]:
+def load_rules(rules_path: Optional[str] = None, space: Optional[str] = None) -> Dict[str, Any]:
     """
-    Load classification rules from YAML.
-
-    Supports layered overrides: base → local (rules.local.yaml).
+    Load classification rules: the one rules file outside the module
+    (lib/mail_rules.py), which /mails loads too.
 
     Args:
-        rules_path: Path to rules YAML. Defaults to rules.base.yaml.
+        rules_path: An explicit rules file, loaded on its own.
+        space: Apply this space's section of the rules file (team mailboxes).
 
     Returns:
-        Merged rules dict.
+        Rules dict.
     """
-    path = Path(rules_path) if rules_path else RULES_DEFAULT
-    with open(path) as f:
-        rules = yaml.safe_load(f)
+    return _mail_rules().load_rules(rules_path, space=space)
 
-    # Apply local overlay if it exists (rules.local.yaml, gitignored)
-    local_path = path.parent / "rules.local.yaml"
-    if local_path.exists():
-        with open(local_path) as f:
-            local = yaml.safe_load(f) or {}
-        rules = _deep_merge(rules, local)
 
-    return rules
+def _mail_rules():
+    lib_dir = str(Path(__file__).resolve().parent)
+    if lib_dir not in sys.path:
+        sys.path.insert(0, lib_dir)
+    import mail_rules
+    return mail_rules
 
 
 def _deep_merge(base: Dict, override: Dict) -> Dict:
     """Merge override into base, lists are extended (not replaced)."""
-    result = dict(base)
-    for key, val in override.items():
-        if key in result and isinstance(result[key], dict) and isinstance(val, dict):
-            result[key] = _deep_merge(result[key], val)
-        elif key in result and isinstance(result[key], list) and isinstance(val, list):
-            result[key] = result[key] + val
-        else:
-            result[key] = val
-    return result
+    return _mail_rules().deep_merge(base, override)
 
 
 # ---------------------------------------------------------------------------
@@ -201,24 +189,23 @@ def _classify_by_rules(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
     # ------------------------------------------------------------------
     # 1. CI noise — GitHub Actions run failures / cancels
     # ------------------------------------------------------------------
-    if sender == "noreply6@service.example.com":
+    github_senders = [g.lower() for g in (rules.get("github", {}) or {}).get("notification_senders") or []]
+    if any(g in sender for g in github_senders):
         if "run failed:" in subject or "run cancelled:" in subject or "run canceled:" in subject:
             return _result("auto_archive", "auto_archive", "LOW",
                            "CI notification (run failure/cancel)", [], "ci_noise")
 
     # ------------------------------------------------------------------
-    # 1b. npm publishes
+    # 1b. Service notifications named in the rules (npm publishes, GA4 reports)
     # ------------------------------------------------------------------
-    if sender == "support4@vendor.example.com" and "successfully published" in subject:
+    for rule_name, n in ((rules.get("notifications") or {}).items()):
+        if not any(a.lower() in sender for a in n.get("senders") or []):
+            continue
+        wanted = [w.lower() for w in n.get("subject_contains") or []]
+        if wanted and not any(w in subject for w in wanted):
+            continue
         return _result("auto_archive", "auto_archive", "LOW",
-                       "npm package publish notification", [], "npm_publish")
-
-    # ------------------------------------------------------------------
-    # 1c. GA4 / analytics reports
-    # ------------------------------------------------------------------
-    if "noreply-analytics@google" in sender:
-        return _result("auto_archive", "auto_archive", "LOW",
-                       "GA4 analytics report", [], "ga4_report")
+                       n.get("reason", rule_name), [], rule_name)
 
     # ------------------------------------------------------------------
     # 1d. Dependabot
@@ -244,7 +231,7 @@ def _classify_by_rules(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
     # matching never fires in practice and everything falls through to
     # "review". The authoritative signal is the X-GitHub-Reason header,
     # which the gmail adapter now exposes as Email.gh_reason. We route by
-    # that against the events config in rules.base.yaml.
+    # that against the events config in the rules file.
     # ------------------------------------------------------------------
     gh_config = rules.get("github", {})
     gh_senders = [s.lower() for s in (gh_config.get("notification_senders") or [])]
@@ -676,7 +663,7 @@ def scan_inbox(
         account_address: Gmail account to scan.
         days:            Days to look back.
         max_results:     Max emails to fetch.
-        rules_path:      Path to rules YAML (default: rules.base.yaml).
+        rules_path:      Path to rules YAML (default: the one rules file, lib/mail_rules.py).
 
     Returns:
         dict with keys:
@@ -1180,7 +1167,7 @@ Examples:
     parser.add_argument("--max-results", type=int, default=200,
                         help="Max emails to fetch (default: 200)")
     parser.add_argument("--rules", default=None,
-                        help="Path to rules YAML (default: rules.base.yaml)")
+                        help="Path to rules YAML (default: 0-personal/.datacore/module-data/mail/rules.yaml)")
     parser.add_argument("--cache", default=None,
                         help="Path to WRITE scan cache JSON (live scan results are persisted here)")
     parser.add_argument("--load-cache", default=None,

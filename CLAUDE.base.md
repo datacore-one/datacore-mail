@@ -26,7 +26,7 @@ Gmail API -> GmailAdapter -> ClassifierProcessor -> Specialized Processors -> in
 Each email gets an action class and a track. CC and SPAM auto-archive. ACTIONABLE emails are grouped by sender for batch processing. Newsletter track feeds into research module.
 
 ### Multi-Space Support
-Each space can have independent `mail.yaml` config with different accounts and rules overlaying `rules.base.yaml`.
+Each space declares its own accounts in `{space}/.datacore/module-data/mail/mail.yaml`. All rules live in one file, `0-personal/.datacore/module-data/mail/rules.yaml`, read by /mails and the nightly triage alike (`lib/mail_rules.py`); rules for one space's accounts go under its `spaces:` section. The module's `rules.base.yaml` is only the generic example, used when that file does not exist.
 
 ## Agents & Commands
 
@@ -43,8 +43,8 @@ Each space can have independent `mail.yaml` config with different accounts and r
 
 | Path | Purpose |
 |------|---------|
-| `{space}/mail.yaml` | Space email account config |
-| `{space}/mail-rules.yaml` | Space-specific routing rules |
+| `{space}/.datacore/module-data/mail/mail.yaml` | Space email account config |
+| `0-personal/.datacore/module-data/mail/rules.yaml` | All mail rules (one file; team rules under `spaces:`) |
 | `.datacore/env/credentials/` | OAuth credentials and tokens |
 | `.datacore/state/mail/scan_cache_<account>.json` | Cached scan results (host state, never inside the module -- MEM-63) |
 

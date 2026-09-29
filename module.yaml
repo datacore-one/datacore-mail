@@ -28,8 +28,8 @@ provides:
     - gmail           # Gmail API adapter with OAuth2
 
 settings:
-  # Per-space mail configuration in {space}/mail.yaml
-  # Per-space rules in {space}/mail-rules.yaml
+  # Per-space account config in {space}/.datacore/module-data/mail/mail.yaml
+  # All rules in one file: 0-personal/.datacore/module-data/mail/rules.yaml (team rules under spaces:)
   auto_archive_cc: true
   auto_archive_spam: true
   daily_digest_enabled: true

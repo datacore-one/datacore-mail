@@ -69,5 +69,5 @@ def test_a_message_can_be_asked_what_happened_to_it(tmp_path, monkeypatch):
 def test_no_rule_file_still_asks_for_a_trash(tmp_path):
     """The eight `action: trash` rules became `archive` on 2026-09-17."""
     root = MODULE.parents[2]
-    for rules in root.glob('[0-9]-*/.datacore/mail-rules.yaml'):
+    for rules in [*root.glob("[0-9]-*/.datacore/module-data/mail/rules.yaml"), *root.glob("[0-9]-*/.datacore/mail-rules.yaml")]:
         assert 'action: trash' not in rules.read_text(encoding='utf-8'), rules

@@ -2,10 +2,10 @@
 # ========================================
 #
 # This file contains default classification rules that apply across all spaces.
-# Override with space-specific rules in {space}/mail-rules.yaml
-# Personal overrides in .datacore/modules/mail/rules.local.yaml (gitignored)
+# This is the generic example. An installation keeps ALL its rules in one file,
+# 0-personal/.datacore/module-data/mail/rules.yaml (lib/mail_rules.py); this file
+# applies only when that one does not exist. Team-mailbox rules go under spaces:.
 #
-# Rules are merged in order: base → space → local (later wins)
 #
 # Pattern: DIP-0002 Layered Context Pattern applied to email classification
 
@@ -43,7 +43,7 @@ protected:
 senders:
   # Senders that always trigger ACTIONABLE
   actionable: []
-  # Space-specific: Add business contacts in {space}/mail-rules.yaml
+  # Space-specific: Add business contacts in the rules file (a team space: under spaces: <space>)
   # Example:
   #   - pattern: "mayur"
   #     priority: HIGH
@@ -429,8 +429,8 @@ senders:
 calendar:
   # Notification senders
   notification_senders:
-    - "noreply1@service.example.com"
-    - "calendar1@service.example.com"
+    - "calendar-notification@google.com"
+    - "calendar@google.com"
 
   # Credential-harvest lures in an invitation. Any match → category
   # "phishing", flagged to the owner, never archived, never answered.
@@ -625,7 +625,7 @@ domains:
 github:
   # Notification sender (routed to GitHubProcessor)
   notification_senders:
-    - "noreply6@service.example.com"
+    - "notifications@github.com"
 
   # Event types — keys MUST match the literal X-GitHub-Reason header values.
   # Reference: https://docs.github.com/en/rest/activity/notifications
@@ -704,7 +704,7 @@ github:
 
   # Repo patterns for routing
   repos: []
-  # Space-specific: Add repo rules in {space}/mail-rules.yaml
+  # Space-specific: Add repo rules in the rules file (a team space: under spaces: <space>)
   # Example:
   #   - pattern: "org-name/project-alpha"
   #     space: 2-projectspace
@@ -722,9 +722,9 @@ github:
 n8n:
   # Notification sender (identifies n8n emails)
   notification_senders:
-    - "support1@vendor.example.com"
-    - "noreply4@service.example.com"
-    - "support3@vendor.example.com"
+    - "hello@info.n8n.io"
+    - "noreply@n8n.io"
+    - "support@n8n.io"
 
   # Event types and their actions
   events:
@@ -836,8 +836,30 @@ actions:
 threads:
   # Threads that should always be ACTIONABLE
   actionable: []
-  # Space-specific: Add thread rules in {space}/mail-rules.yaml
+  # Space-specific: Add thread rules in the rules file (a team space: under spaces: <space>)
   # Example:
   #   - subject_contains: "Fundraising"
   #     priority: HIGH
   #     tags: [business, fundraising]
+
+# =============================================================================
+# SERVICE NOTIFICATIONS (auto-archived by the nightly triage)
+# =============================================================================
+notifications:
+  npm_publish:
+    senders: ["support@npmjs.com"]
+    subject_contains: ["successfully published"]
+    reason: "npm package publish notification"
+  ga4_report:
+    senders: ["noreply-analytics@google.com"]
+    reason: "GA4 analytics report"
+
+# =============================================================================
+# TEAM MAILBOXES — rules applied only to one space's accounts
+# =============================================================================
+# spaces:
+#   1-teamspace:
+#     senders:
+#       actionable:
+#         - pattern: "@partner.example"
+#           reason: "Partner — needs a reply"

@@ -18,6 +18,16 @@ from .processors.accounting import AccountingProcessor
 from .processors.newsletter import NewsletterProcessor, batch_process_newsletters
 
 
+def _account_config(space_dir: Path):
+    """The space's mail.yaml (lib/mail_rules.py: module-data/mail/, else .datacore/)."""
+    import sys
+    lib_dir = str(Path(__file__).resolve().parent / "lib")
+    if lib_dir not in sys.path:
+        sys.path.insert(0, lib_dir)
+    import mail_rules
+    return mail_rules.account_config(space_dir)
+
+
 @dataclass
 class AccountConfig:
     """Configuration for a single email account."""
@@ -75,8 +85,8 @@ class MailModule:
             if not space_dir.name[0].isdigit():
                 continue
 
-            mail_yaml = space_dir / ".datacore" / "mail.yaml"
-            if mail_yaml.exists():
+            mail_yaml = _account_config(space_dir)
+            if mail_yaml:
                 space_accounts = self._load_space_config(mail_yaml, space_dir)
                 accounts.extend(space_accounts)
 

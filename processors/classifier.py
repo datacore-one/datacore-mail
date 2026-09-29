@@ -58,6 +58,7 @@ class MergedRules:
     github_actionable_keywords: List[str]
     github_informational_keywords: List[str]
     github_repos: List[Dict]
+    github_notification_senders: List[str]
     threads_actionable: List[Dict]
     actions: Dict[str, Dict]
 
@@ -66,11 +67,16 @@ class MergedRules:
 # RULES LOADER (DIP-0002 Pattern)
 # =============================================================================
 
+def _word_match(pattern: str, text: str) -> bool:
+    """Whole-word match: the research pattern "avc" must not match the name "Žavcer"."""
+    import re
+    return re.search(r"(?<!\w)" + re.escape(pattern) + r"(?!\w)", text) is not None
+
+
 class RulesLoader:
     """
-    Load and merge rules from layered YAML files.
-
-    Merge order: base → space → local (later overrides/extends earlier)
+    Load the one rules file (lib/mail_rules.py, shared with the nightly triage),
+    with this space's section applied for team mailboxes.
     """
 
     def __init__(self, module_path: Path, space_path: Optional[Path] = None):
@@ -85,20 +91,14 @@ class RulesLoader:
         self.space_path = space_path
 
     def load(self) -> MergedRules:
-        """Load and merge all rule layers."""
-        # Layer 1: Base rules (PUBLIC)
-        base_rules = self._load_yaml(self.module_path / "rules.base.yaml")
-
-        # Layer 2: Space rules (SPACE)
-        space_rules = {}
-        if self.space_path:
-            space_rules = self._load_yaml(self.space_path / ".datacore" / "mail-rules.yaml")
-
-        # Layer 3: Local rules (PRIVATE)
-        local_rules = self._load_yaml(self.module_path / "rules.local.yaml")
-
-        # Merge layers
-        return self._merge_rules(base_rules, space_rules, local_rules)
+        """Load the rules file and turn it into MergedRules."""
+        import sys
+        lib_dir = str(Path(self.module_path) / "lib")
+        if lib_dir not in sys.path:
+            sys.path.insert(0, lib_dir)
+        import mail_rules
+        rules = mail_rules.load_rules(space=self.space_path.name if self.space_path else None)
+        return self._merge_rules(rules, {}, {})
 
     def _load_yaml(self, path: Path) -> Dict:
         """Load YAML file, return empty dict if not exists."""
@@ -161,6 +161,7 @@ class RulesLoader:
             github_actionable_keywords=merge_simple_list('github', 'actionable_keywords'),
             github_informational_keywords=merge_simple_list('github', 'informational_keywords'),
             github_repos=merge_list('github', 'repos'),
+            github_notification_senders=[g.lower() for g in merge_simple_list('github', 'notification_senders')],
             threads_actionable=merge_list('threads', 'actionable'),
             actions=merge_actions()
         )
@@ -215,7 +216,7 @@ class ClassifierProcessor:
         from_lower = from_text.lower()
         for rule in rules:
             pattern = rule.get('pattern', '').lower()
-            if pattern and pattern in from_lower:
+            if pattern and _word_match(pattern, from_lower):
                 return rule
         return None
 
@@ -231,10 +232,8 @@ class ClassifierProcessor:
     def _is_github_notification(self, email: Email) -> bool:
         """Check if email is a GitHub notification that should be routed to GitHub processor."""
         sender_lower = email.sender.lower()
-        # GitHub notification emails come from noreply6@service.example.com
-        if 'noreply6@service.example.com' in sender_lower:
-            return True
-        return False
+        # GitHub's notification senders are named in the rules file
+        return any(g in sender_lower for g in self.rules.github_notification_senders)
 
     def _extract_event_date(self, email: Email) -> Optional[datetime]:
         """Extract event date from email subject/body for calendar emails."""
@@ -361,7 +360,7 @@ class ClassifierProcessor:
                     matched_rules.append(f"calendar:event_passed:{event_date.strftime('%Y-%m-%d')}")
 
         # GitHub detection
-        is_github = 'noreply6@service.example.com' in sender_lower or 'noreply3@service.example.com' in sender_lower
+        is_github = any(g in sender_lower for g in self.rules.github_notification_senders)
         is_github = is_github or any(k in all_text for k in ['/pull/', '/issues/'])
         github_action = any(kw.lower() in all_text for kw in self.rules.github_actionable_keywords)
         if is_github:

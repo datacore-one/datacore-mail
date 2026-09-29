@@ -29,10 +29,10 @@ Requires a working [Datacore](https://datacore.one) installation.
 
 ## Features
 
-- **Multi-space**: Each space has its own `.datacore/mail.yaml` configuration
+- **Multi-space**: Each space has its own `.datacore/module-data/mail/mail.yaml` configuration
 
 ### Inbound Email Processing
-- **Multi-space**: Each space has its own `mail.yaml` configuration
+- **Multi-space**: Each space has its own `mail.yaml` configuration (in `.datacore/module-data/mail/`)
 - **Multi-account**: Multiple email addresses per space (e.g., `accounting@`, `info@`)
 - **AI classification**: ACTIONABLE / INFORMATIONAL / IGNORE categorization
 - **Specialized processors**: GitHub notifications, invoices, newsletters
@@ -63,10 +63,10 @@ This will:
 
 ### Step 2: Space Configuration
 
-Create `.datacore/mail.yaml` in each space that needs email:
+Create `.datacore/module-data/mail/mail.yaml` in each space that needs email:
 
 ```yaml
-# 1-teamspace/.datacore/mail.yaml
+# 1-teamspace/.datacore/module-data/mail/mail.yaml
 accounts:
   - name: main
     address: user@organization.example.com
@@ -86,7 +86,7 @@ accounts:
 
 ### Step 3: Sender Rules (Optional)
 
-Create `.datacore/mail-rules.yaml` for sender-specific handling:
+Add sender-specific handling to the one rules file, `0-personal/.datacore/module-data/mail/rules.yaml` (start from the module's `rules.base.yaml`; rules for a team space's accounts go under `spaces: {<space>: ...}`):
 
 ```yaml
 # Base rules (sender patterns)
@@ -229,15 +229,15 @@ mail:
 
 | File | Location | Purpose |
 |------|----------|---------|
-| Space config | `{space}/.datacore/mail.yaml` | Account configuration |
-| Sender rules | `{space}/.datacore/mail-rules.yaml` | Per-sender handling |
+| Space config | `{space}/.datacore/module-data/mail/mail.yaml` | Account configuration |
+| Sender rules | `0-personal/.datacore/module-data/mail/rules.yaml` | All rules, one file |
 | OAuth tokens | `.datacore/env/mail/gmail-{email}.json` | Gmail tokens |
 | Invoices | `{space}/content/invoices/` | Extracted invoice PDFs |
 
 ## Architecture
 
 ```
-{space}/.datacore/mail.yaml
+{space}/.datacore/module-data/mail/mail.yaml
             ↓
     Gmail Adapter (OAuth2)
             ↓

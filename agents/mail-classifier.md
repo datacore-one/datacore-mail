@@ -39,7 +39,7 @@ Engrams encode learned behavioral patterns that improve task quality.
 - **mail/processors/classifier.py** - Python module that invokes this agent
 - **/mails command** - Uses classifications to route emails to appropriate actions
 - **inbox.org** - ACTIONABLE emails become tasks via classifier output
-- **mail-rules.yaml** - Rule-based filtering that supplements AI classification
+- **`0-personal/.datacore/module-data/mail/rules.yaml`** (the one rules file) - Rule-based filtering that supplements AI classification
 
 ---
 

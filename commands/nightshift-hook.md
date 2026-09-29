@@ -32,7 +32,7 @@ python3 .datacore/modules/mail/server/triage-mail.sh
 
 Or via Claude:
 ```
-Scan email accounts configured in 0-personal/.datacore/mail.yaml.
+Scan email accounts configured in 0-personal/.datacore/module-data/mail/mail.yaml.
 For each account:
 1. Pull unread emails from past 3 days
 2. Classify by action needed

@@ -16,6 +16,7 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -395,7 +396,10 @@ def _classify_by_rules(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
         if not isinstance(entry, dict):
             continue
         pattern = entry.get("pattern", "")
-        if _pattern_matches(pattern, sender) or _pattern_matches(pattern, sender_name):
+        # Whole-word match: the substring "avc" matched the owner's own name
+        # ("Žavcer") and filed his replies and CI mail as research (2026-09-29).
+        _word = re.compile(r"(?<!\w)" + re.escape(pattern.lower()) + r"(?!\w)") if pattern else None
+        if _word and (_word.search(sender) or _word.search(sender_name)):
             topics = entry.get("topics", [])
             action = entry.get("action", "prepare_for_research")
             return _result("research", action, "MEDIUM",

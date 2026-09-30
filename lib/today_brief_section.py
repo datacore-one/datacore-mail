@@ -41,7 +41,34 @@ def _staleness_days(completed_at: str) -> int | None:
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
     return max(0, (datetime.now(timezone.utc) - ts).days)
-DEFAULT_ACCOUNTS = ["grace@example.com", "heidi@example.com"]
+
+
+def declared_accounts(root: Path | None = None) -> list[str]:
+    """Every address the spaces declare in their mail.yaml, personal space first.
+
+    The same account config the rest of the module reads (mail_rules.account_config).
+    There is no built-in default: an address typed here once was a scrubbed
+    placeholder, and it reached the morning briefing as an inbox with "no scan yet".
+    """
+    import yaml
+    from mail_rules import account_config, data_root
+
+    root = Path(root or data_root())
+    out: list[str] = []
+    for space in sorted(p for p in root.glob("[0-9]-*") if p.is_dir()):
+        cfg = account_config(space)
+        if not cfg:
+            continue
+        try:
+            accounts = (yaml.safe_load(cfg.read_text(encoding="utf-8")) or {}).get("accounts") or {}
+        except (OSError, yaml.YAMLError):
+            continue
+        entries = accounts.values() if isinstance(accounts, dict) else accounts
+        for entry in entries:
+            addr = (entry or {}).get("address") if isinstance(entry, dict) else None
+            if addr and addr not in out:
+                out.append(addr)
+    return out
 
 
 def safe_account_name(account: str) -> str:
@@ -184,7 +211,7 @@ def render_markdown(state_dir: Path, accounts: list[str]) -> str:
         parts.append(f"_Category counts: {cat_counts}_")
 
     if not any_actionable:
-        parts.append("\n*Both inboxes are clean — no items need your attention.*")
+        parts.append("\n*Every inbox is clean — no items need your attention.*")
 
     # --- Pointers ---
     parts.append("\n**Audit**: `~/Data/.datacore/state/mail/audit.jsonl` "
@@ -198,11 +225,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE_DIR,
                         help=f"Mail state directory (default: {DEFAULT_STATE_DIR})")
-    parser.add_argument("--accounts", nargs="+", default=DEFAULT_ACCOUNTS,
-                        help="Accounts to render. Default: acme + example-org")
+    parser.add_argument("--accounts", nargs="+", default=None,
+                        help="Accounts to render. Default: every address the spaces' "
+                             "mail.yaml declares")
     parser.add_argument("--json", action="store_true",
                         help="Emit machine-readable JSON instead of markdown")
     args = parser.parse_args()
+    if args.accounts is None:
+        args.accounts = declared_accounts()
 
     if args.json:
         last_audit = load_last_audit_line(args.state_dir)

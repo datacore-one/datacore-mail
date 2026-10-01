@@ -105,7 +105,7 @@ def test_quick_classify():
 
     # Create test email
     email = create_mock_email(
-        sender="noreply6@service.example.com",
+        sender="notifications@github.com",
         subject="[datacore/core] Issue #123: Bug in processor",
         body="@username mentioned you in an issue...",
         recipients=["user@example.com"]
@@ -138,7 +138,7 @@ def test_batch_classify_simple():
     # Create diverse test emails
     emails = [
         create_mock_email(
-            "noreply6@service.example.com",
+            "notifications@github.com",
             "[datacore/core] PR #456: Add feature X",
             "Pull request opened by @developer..."
         ),

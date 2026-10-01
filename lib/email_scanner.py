@@ -156,6 +156,7 @@ def _classify_by_rules(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
       6. n8n notifications
       7. Research senders
       8. Actionable senders
+      8b. Low senders (kept for review, LOW)
       9. Finance subjects
      10. Newsletter domains
      11. Body-based detection (unsubscribe links etc.)
@@ -404,6 +405,22 @@ def _classify_by_rules(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
             tags = entry.get("tags", [])
             return _result("actionable", "task", priority,
                            f"Actionable sender: {pattern}", tags, "actionable_sender")
+
+    # ------------------------------------------------------------------
+    # 8b. Low senders — kept for review, never a task, never "needs you"
+    #
+    # 2026-10-01: a cold-intro bot fell through to the local model, which
+    # called it actionable MEDIUM, and it sat in the briefing's mail list next
+    # to a declined payment. The rules file names such senders under
+    # `senders.low`; the briefing counts them instead of listing them.
+    # ------------------------------------------------------------------
+    for entry in (rules.get("senders", {}).get("low") or []):
+        pattern = entry.get("pattern", "") if isinstance(entry, dict) else entry
+        if pattern and (_pattern_matches(pattern, sender) or _pattern_matches(pattern, sender_name)):
+            reason = entry.get("reason", "low priority") if isinstance(entry, dict) else "low priority"
+            tags = entry.get("tags", []) if isinstance(entry, dict) else []
+            return _result("actionable", "review", "LOW",
+                           f"Low sender: {pattern} ({reason})", tags, "low_sender")
 
     # ------------------------------------------------------------------
     # 9. Finance subjects

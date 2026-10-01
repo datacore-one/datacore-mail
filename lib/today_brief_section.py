@@ -131,6 +131,10 @@ def actionable_items(cache: dict) -> list[dict]:
                 sender_display = sender_name or sender_email
             out.append({
                 "category": e.get("category"),
+                # The briefing orders and splits by these (brief B4, 2026-10-01).
+                "priority": e.get("priority"),
+                "tags": list(e.get("tags") or []),
+                "action": e.get("action"),
                 "from": sender_display,
                 "subject": e.get("subject", "")[:120],
                 "id": e.get("id"),

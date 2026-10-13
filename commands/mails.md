@@ -531,6 +531,7 @@ Always present for review:
 | `create_task` | Write to inbox.org with :EXTERNAL_URL: |
 | `create_crm` | Write General Contact - [Org].md |
 | `reply` | Send email via adapter.reply() |
+| `draft` | Create a Gmail draft (`users().drafts().create`), then **open it in the browser** — always, in every interactive session: `open "https://mail.google.com/mail/u/?authuser=<account address>#drafts?compose=<draft message id>"` (the message id from `drafts().get`, not the `r…` draft id). Owner default, 2026-10-13. |
 | `delegate` | Slovenian delegation reply + follow-up |
 | `aggregate` | Add to daily digest task |
 | `add_rule` | Update `0-personal/.datacore/module-data/mail/rules.yaml` (never the module's rules.base.yaml) |

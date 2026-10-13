@@ -24,3 +24,14 @@ def test_newsletter_without_a_link_is_skipped_not_an_error(tmp_path, monkeypatch
     assert res.should_archive is False
     assert res.summary.startswith("no article link in: Revolut Wins")
     assert res.inbox_entry is None
+
+
+def test_batch_survives_a_skipped_newsletter(tmp_path, monkeypatch):
+    """2026-10-13: batch_process_newsletters had no 'SKIPPED' bucket, so the
+    first link-less newsletter raised KeyError and stopped the whole batch."""
+    from processors import newsletter as nl
+    monkeypatch.setattr(nl.NewsletterProcessor, "_extract_article_url", lambda self, email: None)
+    email = SimpleNamespace(id="m1", subject="Digest with no link", date=None, body="", sender="n@example.com")
+    cls = {"INFORMATIONAL": [{"external_id": "gmail/m1", "newsletter_action": "prepare_for_research"}]}
+    res = nl.batch_process_newsletters([email], cls, tmp_path)
+    assert [r.email_id for r in res["SKIPPED"]] == ["m1"]

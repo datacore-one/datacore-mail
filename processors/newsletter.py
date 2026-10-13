@@ -443,6 +443,7 @@ def batch_process_newsletters(
         'PRODUCT_TASK_CREATED': [],
         'DAILY_NEWS_ITEM': [],
         'ARCHIVED': [],
+        'SKIPPED': [],
         'ERROR': []
     }
 

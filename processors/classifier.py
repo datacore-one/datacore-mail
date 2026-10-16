@@ -68,7 +68,7 @@ class MergedRules:
 # =============================================================================
 
 def _word_match(pattern: str, text: str) -> bool:
-    """Whole-word match: the research pattern "avc" must not match the name "Žavcer"."""
+    """Whole-word match: the research pattern "avc" must not match inside a longer name."""
     import re
     return re.search(r"(?<!\w)" + re.escape(pattern) + r"(?!\w)", text) is not None
 

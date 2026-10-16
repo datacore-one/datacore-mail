@@ -171,7 +171,7 @@ class NewsletterProcessor:
             # inline text only, a mention notification the classifier called
             # research) has nothing to queue; it stays in the inbox for a
             # person. Counting it as ERROR put "errors=8" in every nightly
-            # Completed line and a Winston alert every morning (2026-09-06/07)
+            # Completed line and a chief-of-staff alert every morning
             # for mail that was never going to be processed differently.
             return NewsletterResult(
                 action='SKIPPED',

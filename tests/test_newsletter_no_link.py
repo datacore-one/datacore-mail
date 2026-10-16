@@ -1,7 +1,7 @@
 """A newsletter with no article link is skipped, not an error.
 
-2026-09-06/07: six to eight such mails a night put "errors=8" in the
-Completed line and a Winston alert every morning, for mail the pipeline
+Six to eight such mails a night put "errors=8" in the
+Completed line and a chief-of-staff alert every morning, for mail the pipeline
 was never going to handle differently."""
 from __future__ import annotations
 

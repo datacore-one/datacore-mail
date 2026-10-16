@@ -1,10 +1,9 @@
 """Research sender patterns match whole words, not substrings.
 
-2026-09-29: the AVC rule (pattern "avc") matched the owner's own name,
-"Gregor Žavcer", as a substring. Every email showing that name — the owner's
-own replies and every GitHub CI notification sent in his name — was classified
-as research and archived by the nightly triage, including the thread with a
-prospective pilot partner.
+The AVC rule (pattern "avc") once matched an owner's own name as a substring.
+Every email showing that name — the owner's own replies and every GitHub CI
+notification sent in their name — was classified as research and archived by
+the nightly triage, including threads that needed a reply.
 """
 import sys
 import types
@@ -21,7 +20,7 @@ def _email(sender, name, subject="Re: something"):
 
 def test_owner_name_containing_avc_is_not_research():
     rules = s.load_rules()
-    c = s._classify_by_rules(_email("gregor@datafund.io", "Gregor Žavcer"), rules)
+    c = s._classify_by_rules(_email("alex@example.test", "Alex Havcroft"), rules)
     assert c.get("rule_name") != "research_sender"
 
 

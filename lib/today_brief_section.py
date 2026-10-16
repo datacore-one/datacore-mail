@@ -14,6 +14,7 @@ Usage:
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +24,8 @@ DEFAULT_STATE_DIR = Path.home() / "Data" / ".datacore" / "state" / "mail"
 # A briefing section is meant to describe last night. Two days of slack covers
 # a missed run or a weekend; past that it is history and must be labelled so.
 STALE_AFTER_DAYS = 2
+# Name of the host that runs the nightly scan, for the stale warning.
+SCAN_HOST = os.environ.get("MAIL_SCAN_HOST", "the scan host")
 
 
 def _staleness_days(completed_at: str) -> int | None:
@@ -153,20 +156,19 @@ def render_markdown(state_dir: Path, accounts: list[str]) -> str:
         stale_age = _staleness_days(ts)
         if stale_age is not None and stale_age >= STALE_AFTER_DAYS:
             # Say it loudly rather than dressing old numbers as this morning's.
-            # The scan runs on winston and writes .datacore/state/mail/, which
-            # is gitignored (**/.datacore/state/) and therefore has no route to
-            # any other machine. When the hourly rsync stops, this file simply
-            # stops advancing — and every field below stays perfectly
-            # well-formed while describing a run from months ago. That is how a
-            # June 3 scan was reported as "Overnight triage" in every briefing
-            # for eleven weeks: nothing was broken enough to look broken.
+            # The scan runs on the scan host and writes .datacore/state/mail/,
+            # which is gitignored (**/.datacore/state/) and therefore has no
+            # route to any other machine unless it is copied. When that copy
+            # stops, this file simply stops advancing — and every field below
+            # stays perfectly well-formed while describing a run from months
+            # ago: nothing is broken enough to look broken.
             parts.append(
                 f"\n> ⚠️ **STALE — this triage ran {stale_age} days ago "
                 f"({ts}).** Treat the numbers below as history, not this "
-                f"morning. The scan runs on winston at 03:30 UTC; its state "
-                f"reaches this machine only via the hourly rsync of "
+                f"morning. The scan runs on {SCAN_HOST}; its state "
+                f"reaches this machine only by copying "
                 f"`.datacore/state/mail/` (gitignored, so git will not carry "
-                f"it). Check that pull before trusting this section.\n"
+                f"it). Check that copy before trusting this section.\n"
             )
         parts.append(f"\n**Overnight triage** — {ts} (run_id={last_audit.get('run_id','?')})\n")
         parts.append("| Account | Scanned | Archived | Processed | Errors |")

@@ -357,9 +357,9 @@ Grouped by sender:
 
 | # | Sender | Count | Context | Suggested Action |
 |---|--------|-------|---------|------------------|
-| 1 | Mayur (Qubit Capital) | 3 | Fundraising follow-up | Reply + CRM |
-| 2 | Adrian (Tokeny) | 2 | Partnership | Task + follow-up |
-| 3 | Sander (Green Orion) | 1 | Contract | Task |
+| 1 | Jane (Example Capital) | 3 | Consulting follow-up | Reply + CRM |
+| 2 | Sam (Acme Corp) | 2 | Partnership | Task + follow-up |
+| 3 | Lee (Globex) | 1 | Contract | Task |
 | 4 | [Unknown senders] | 6 | Various | Manual review |
 
 Total: 12 emails requiring decision
@@ -370,14 +370,14 @@ Total: 12 emails requiring decision
 For each sender group, show thread context and ask for action:
 
 ```
-─── Mayur (Qubit Capital) - 3 emails ─────────────────────────
+─── Jane (Example Capital) - 3 emails ────────────────────────
 
 Thread summary:
-  Oct 15: "Regarding fundraising - reduced fee offer"
+  Oct 15: "Regarding our consulting offer"
   Nov 10: "Following up on our conversation"
   Dec 5: "Still interested in working together"
 
-Context: Fundraising consulting offer, waiting for our response.
+Context: Consulting offer, waiting for our response.
 
 Suggested actions:
   [R] Reply with reconnect message + follow-up task
@@ -390,11 +390,10 @@ Your choice: R
 
 Reply template:
 ───────────────────────────────────────────────────────
-Hi Mayur,
+Hi Jane,
 
-Apologies for the delayed response. We're pushing the
-fundraise timeline back - want to secure first clients
-before approaching investors.
+Apologies for the delayed response. The timing doesn't
+work for us this quarter.
 
 Let's reconnect in January - I'll reach out when we're ready.
 
@@ -423,9 +422,9 @@ Subject: Tokenizing Data
 Date: Nov 24, 2025
 
 Body preview:
-  Hi [User], This is Alice from Vendorco, an RWA infrastructure
+  Hi [User], This is Alice from Vendorco, an infrastructure
   provider. I noticed you registered for our side event at
-  Token 2049 Singapore...
+  a conference last month...
 
 Actions:
   [T] Create task (specify tags)
@@ -438,7 +437,7 @@ Your choice: C
 
 CRM Organization: Vendorco
 Category: partnership
-Tags: rwa, competitor
+Tags: infrastructure, competitor
 
 ✓ Created: General Contact - Vendorco.md
 ✓ Created task: Respond to Vendorco partnership outreach
@@ -532,7 +531,7 @@ Always present for review:
 | `create_crm` | Write General Contact - [Org].md |
 | `reply` | Send email via adapter.reply() |
 | `draft` | Create a Gmail draft (`users().drafts().create`), then **open it in the browser** — always, in every interactive session: `open "https://mail.google.com/mail/u/?authuser=<account address>#drafts?compose=<draft message id>"` (the message id from `drafts().get`, not the `r…` draft id). Owner default, 2026-10-13. |
-| `delegate` | Slovenian delegation reply + follow-up |
+| `delegate` | Delegation reply + follow-up |
 | `aggregate` | Add to daily digest task |
 | `add_rule` | Update `0-personal/.datacore/module-data/mail/rules.yaml` (never the module's rules.base.yaml) |
 

@@ -174,14 +174,14 @@ TEST_EMAILS = [
         "sender": "support2@vendor.example.com",
         "sender_name": "'Example, Dave' via Acme Info",
         "subject": "[support2@vendor.example.com] Invitation to Participate in the Data Altruism Consent Management System Project",
-        "snippet": "Dear Sir/Madam, I hope this message finds you well. Deloitte is preparing a bid for the European Commission's call for tenders EC-CNECT-LUX/2026/OP/0004",
+        "snippet": "Dear Sir/Madam, I hope this message finds you well. A consultancy is preparing a bid for the European Commission's call for tenders EC-XXXX/2026/OP/0000",
         "expected": "actionable",
     },
     {
         "sender": "walter@example.com",
         "sender_name": "Victor Example",
-        "subject": "Meet up while I'm in Slovenia?",
-        "snippet": "Hey the founder, I will be in Slovenia this summer, meeting with a few local businesses that are planning to expand their outreach efforts.",
+        "subject": "Meet up while I'm in town?",
+        "snippet": "Hey the founder, I will be in your city this summer, meeting with a few local businesses that are planning to expand their outreach efforts.",
         "expected": "auto_archive",
     },
     {
@@ -193,16 +193,16 @@ TEST_EMAILS = [
     },
     {
         "sender": "sybil@example.com",
-        "sender_name": "Trent Fius",
+        "sender_name": "Trent Example",
         "subject": "Fwd: [support2@vendor.example.com] Invitation to Participate in the Data Altruism Consent Management System Project",
         "snippet": "---------- Forwarded message --------- From: 'Example, Dave' via Acme Info",
         "expected": "actionable",
     },
     {
         "sender": "trent@example.com",
-        "sender_name": "Tina Jovović",
-        "subject": "Re: E-racuni.com: RAČUN št. 2026-01119",
-        "snippet": "the founder, ta račun je bil plačan, ampak vidim, da je to račun za paket do 21.6.",
+        "sender_name": "Pat Example",
+        "subject": "Re: Invoice no. 2026-0001",
+        "snippet": "Hi, this invoice was paid, but I see it covers the package until 21.6.",
         "expected": "forward_accounting",
     },
 ]

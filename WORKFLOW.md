@@ -179,9 +179,9 @@ Is sender known contact?
 ```
 
 **Examples:**
-- Mayur Vastari (Qubit Capital) → CRM note + task
-- Mario Paladini (Club Globals) → CRM note + task
-- Lyudmil Stoyanov (CloudOpsters) → Review, decide, then CRM note OR decline
+- An investor-relations consultant → CRM note + task
+- An events club inviting you to speak → CRM note + task
+- A cloud-services agency → Review, decide, then CRM note OR decline
 
 ### 8. EVENT FOLLOW-UPS (Davos, conferences)
 

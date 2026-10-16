@@ -2,7 +2,7 @@
 
 today_brief_section.py defaulted to two scrubbed placeholder addresses
 (grace@/heidi@example.com). The chief-of-staff briefing calls it without
---accounts, so on 2026-09-30 Winston's "Actionable Mail" said both
+--accounts, so the briefing's "Actionable Mail" said both
 placeholders had "no scan yet" while the two real inboxes had been scanned.
 The accounts are the ones each space declares in its mail.yaml
 (mail_rules.account_config), the same config the rest of the module reads.

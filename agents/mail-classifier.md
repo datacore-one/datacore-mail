@@ -71,7 +71,7 @@ JSON classification:
   "actions": ["Reply with timeline", "Attach proposal"],
   "priority": "HIGH|MEDIUM|LOW",
   "effort": "Quick|Moderate|Significant",
-  "suggested_title": "Reply to investor re: Dubai pilot",
+  "suggested_title": "Reply to investor re: pilot timeline",
   "deadline": "2025-12-15",
   "reasoning": "Investor asking for timeline, requires prompt response"
 }

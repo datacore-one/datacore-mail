@@ -19,11 +19,13 @@ provides:
   commands:
     - mails           # Interactive email processing workflow
     - triage-email    # Automated daily email triage
+    - nightshift-hook
+    - today-hook
   agents:
     - mail-classifier # AI-powered email classification
     - mail-responder  # Nightshift agent for :AI:mail: tasks
-  skills:
-    - triage-email
+  # triage-email is a command (commands/triage-email.md), not a skill: there is
+  # no skills/triage-email/SKILL.md (2026-10-16).
   adapters:
     - gmail           # Gmail API adapter with OAuth2
 

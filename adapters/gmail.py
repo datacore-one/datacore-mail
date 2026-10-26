@@ -883,7 +883,11 @@ class GmailAdapter:
             try:
                 import sys as _sys
                 from pathlib import Path as _Path
-                _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+                # mail_audit.py lives one level UP from adapters/ (module root).
+                # .parent is adapters/; .parent.parent is the module root where
+                # mail_audit.py actually is. The old .parent insert made the
+                # import fail silently every time, so messages.jsonl was never written.
+                _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
                 from mail_audit import record
             except Exception:  # noqa: BLE001
                 return

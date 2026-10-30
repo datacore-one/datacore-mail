@@ -97,6 +97,30 @@ SOURCE_NAMES = {
 }
 
 
+def insert_under_inbox(content: str, entry: str) -> Optional[str]:
+    """CONTENT with ENTRY placed first under the `* Inbox` heading, or None
+    when there is no such heading. The entry goes below the heading's planning
+    lines and property drawer: inserted straight after the heading line, it
+    took over the container's :ID: drawer and carried that ID into every file
+    the capture was later filed in (one ID in 21 places, 2026-10-30)."""
+    pos = content.find("* Inbox\n")
+    if pos == -1:
+        return None
+    pos += len("* Inbox\n")
+    rest = content[pos:].split("\n")
+    i = 0
+    while i < len(rest) and rest[i].strip().startswith(("SCHEDULED:", "DEADLINE:", "CLOSED:")):
+        i += 1
+    if i < len(rest) and rest[i].strip() == ":PROPERTIES:":
+        j = i
+        while j < len(rest) and rest[j].strip() != ":END:":
+            j += 1
+        if j < len(rest):
+            i = j + 1
+    head = "\n".join(rest[:i]) + ("\n" if i else "")
+    return content[:pos] + head + entry + "\n".join(rest[i:])
+
+
 class NewsletterProcessor:
     """Process newsletter emails by category."""
 
@@ -199,11 +223,8 @@ Source: {source} newsletter ({email_date})
 
         if inbox_path.exists():
             content = inbox_path.read_text()
-            # Find "* Inbox" heading
-            inbox_pos = content.find("* Inbox\n")
-            if inbox_pos != -1:
-                insert_pos = inbox_pos + len("* Inbox\n")
-                new_content = content[:insert_pos] + inbox_entry + content[insert_pos:]
+            new_content = insert_under_inbox(content, inbox_entry)
+            if new_content is not None:
                 inbox_path.write_text(new_content)
                 entry_written = True
 
@@ -260,10 +281,8 @@ Relevant keywords: {', '.join(relevant_keywords)}
             inbox_path = self.space_path / 'org' / 'inbox.org'
             if inbox_path.exists():
                 content = inbox_path.read_text()
-                inbox_pos = content.find("* Inbox\n")
-                if inbox_pos != -1:
-                    insert_pos = inbox_pos + len("* Inbox\n")
-                    new_content = content[:insert_pos] + inbox_entry + content[insert_pos:]
+                new_content = insert_under_inbox(content, inbox_entry)
+                if new_content is not None:
                     inbox_path.write_text(new_content)
 
             return NewsletterResult(
@@ -528,8 +547,6 @@ def _create_daily_digest_task(daily_news_results: List[NewsletterResult], space_
     inbox_path = space_path / 'org' / 'inbox.org'
     if inbox_path.exists():
         content = inbox_path.read_text()
-        inbox_pos = content.find("* Inbox\n")
-        if inbox_pos != -1:
-            insert_pos = inbox_pos + len("* Inbox\n")
-            new_content = content[:insert_pos] + task_entry + content[insert_pos:]
+        new_content = insert_under_inbox(content, task_entry)
+        if new_content is not None:
             inbox_path.write_text(new_content)

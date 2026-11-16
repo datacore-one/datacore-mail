@@ -236,11 +236,14 @@ calendar:
 
 subjects:
   # Calendar-related subjects → route to calendar processor
+  # No "reminder:" entry here on purpose. A subject rule applies to every
+  # sender, and most reminders are not calendar reminders: an e-signature
+  # reminder waiting for a signature was classed as a passed event and would
+  # have been archived (2026-11-14). Reminders from the calendar sender are
+  # handled above, under calendar.events.reminder.
   calendar:
     - pattern: "invitation:"
       action: check_calendar_sync
-    - pattern: "reminder:"
-      action: check_event_passed
     - pattern: "updated invitation:"
       action: check_calendar_sync
     - pattern: "accepted:"
@@ -284,7 +287,14 @@ subjects:
       reason: "Service about to be cut off — GCP dunning wording"
     - pattern: "invoice"
       action: route_to_accounting
+    # "payment" is also a word newsletters use ("payments and fintech"), and
+    # finance subjects are checked before newsletter senders. Flagged, this
+    # entry does not apply to a publication: a domain under domains.newsletter,
+    # or a senders.newsletter entry whose action is aggregate_daily_news or
+    # prepare_for_research. A vendor listed there for product updates is not a
+    # publication, so its receipts still match. Everyone else as before.
     - pattern: "payment"
+      not_from_newsletters: true
     # Tax / overdue / dunning notices — user must see, not just forward
     - pattern: "tax notice"
       action: surface_actionable
@@ -345,6 +355,16 @@ github:
   # Notification sender (routed to GitHubProcessor)
   notification_senders:
     - "notifications@github.com"
+
+  # Whose notifications these are. When an inbox also receives GitHub mail for
+  # another account (a bot whose address is a plus-address of yours), name
+  # your own logins here: a notification GitHub addressed to any other login
+  # (X-GitHub-Recipient) is then never your task. It is kept for review at low
+  # priority, or archived when other_recipients says so. Left unset, every
+  # notification is judged as yours, as before.
+  # own_logins:
+  #   - "your-github-login"
+  # other_recipients: review        # review (default) | archive
 
   # Event types — keys MUST match the literal X-GitHub-Reason header values.
   # Reference: https://docs.github.com/en/rest/activity/notifications

@@ -245,6 +245,23 @@ def _classify_by_rules(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
             return _result("github", "task", "HIGH",
                            "GitHub security advisory", ["security", "github"], "github_security")
 
+        # Whose notification is it. One inbox can receive GitHub mail for
+        # several accounts (a bot whose address is a plus-address of the
+        # owner's). A review request, mention or assignment for that account
+        # is not the owner's to-do: 2026-11-14, 29 of 206 GitHub mails in one
+        # inbox were the bot's and were classified as the owner's tasks. Only
+        # when the rules name the owner's logins AND the mail names its
+        # recipient; otherwise nothing changes. It is kept for review, and
+        # archived only when the rules say so (`other_recipients: archive`).
+        own_logins = [str(x).lower() for x in (gh_config.get("own_logins") or [])]
+        gh_recipient = (getattr(email, "gh_recipient", None) or "").strip().lower()
+        if own_logins and gh_recipient and gh_recipient not in own_logins:
+            reason = f"GitHub notification for {gh_recipient} (another account)"
+            if str(gh_config.get("other_recipients") or "review").lower() == "archive":
+                return _result("auto_archive", "auto_archive", "LOW", reason,
+                               ["github"], "github_other_recipient_arch")
+            return _result("github", "review", "LOW", reason, ["github"], "github_other_recipient")
+
         # Header-based event routing (the real fix)
         gh_reason = (getattr(email, "gh_reason", None) or "").lower()
         events = gh_config.get("events") or {}
@@ -425,9 +442,36 @@ def _classify_by_rules(email: Any, rules: Dict[str, Any]) -> Dict[str, Any]:
     # ------------------------------------------------------------------
     # 9. Finance subjects
     # ------------------------------------------------------------------
+    def _news_publication() -> bool:
+        """The sender is a publication: a newsletter platform's domain, or a
+        sender whose mail the rules aggregate as news or prepare for research.
+
+        Narrower than "listed under senders.newsletter" on purpose. That list
+        also holds vendors (product updates, service mail to archive), and a
+        vendor's payment receipt is a receipt.
+        """
+        domain = sender.split("@")[-1] if "@" in sender else ""
+        if any(str(d).lower() in domain for d in (rules.get("domains", {}).get("newsletter") or [])):
+            return True
+        for nl in (rules.get("senders", {}).get("newsletter") or []):
+            if not isinstance(nl, dict):
+                continue
+            if nl.get("action") not in ("aggregate_daily_news", "prepare_for_research"):
+                continue
+            pat = nl.get("pattern", "")
+            if pat and (_pattern_matches(pat, sender) or _pattern_matches(pat, sender_name)):
+                return True
+        return False
+
     for entry in (rules.get("subjects", {}).get("finance") or []):
         pattern = entry.get("pattern", "") if isinstance(entry, dict) else entry
         if _pattern_matches(pattern, subject):
+            # A word newsletters use ("payments") is not proof of an invoice.
+            # An entry flagged `not_from_newsletters` does not apply to a
+            # publication; unflagged entries (invoices, failed charges) apply
+            # to everyone, and so does a flagged one for every other sender.
+            if isinstance(entry, dict) and entry.get("not_from_newsletters") and _news_publication():
+                continue
             action = entry.get("action", "route_to_accounting") if isinstance(entry, dict) else "route_to_accounting"
             if action == "route_to_accounting":
                 return _result("forward_accounting", "forward", "HIGH",

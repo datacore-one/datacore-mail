@@ -80,6 +80,12 @@ class Email:
     # issue/PR titles, not event types).
     gh_reason: Optional[str] = None
 
+    # GitHub login the notification was sent to (X-GitHub-Recipient header).
+    # One inbox can receive mail for several accounts (a bot whose address is
+    # a plus-address of the owner's): the reason says why GitHub wrote, this
+    # says to whom.
+    gh_recipient: Optional[str] = None
+
     # Raw data
     raw: Dict[str, Any] = field(default_factory=dict)
 
@@ -644,6 +650,7 @@ class GmailAdapter:
             in_reply_to=headers.get('in-reply-to'),
             references=headers.get('references', '').split(),
             gh_reason=headers.get('x-github-reason'),
+            gh_recipient=headers.get('x-github-recipient'),
             raw=msg
         )
 
